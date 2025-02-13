@@ -2,79 +2,98 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>熊熊秘密通信站 🔒</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熊熊通信工具</title>
     <style>
         :root {
             --primary: #FF6B6B;
             --secondary: #FFAA93;
             --bg: #FFF5F3;
         }
+        * {
+            box-sizing: border-box;
+        }
         body {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 15px;
             background: var(--bg);
-            font-family: 'Segoe UI', system-ui;
+            font-family: -apple-system, system-ui;
         }
         .header {
             text-align: center;
-            margin: 2rem 0;
+            margin: 1rem 0;
         }
         .title-image {
-            max-width: 60px;
-            height: auto;
+            width: 50px;
+            height: 50px;
             vertical-align: middle;
-            margin-right: 10px;
         }
         .converter-box {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 2rem;
-            animation: slideUp 0.6s ease-out;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1rem;
+            margin: 1rem 0;
         }
         textarea {
             width: 100%;
-            padding: 1rem;
+            padding: 12px;
             border: 2px solid var(--secondary);
             border-radius: 8px;
-            font-size: 1.1rem;
-            transition: all 0.3s;
-        }
-        textarea:focus {
-            border-color: var(--primary);
-            outline: none;
+            font-size: 16px;
+            min-height: 100px;
+            resize: vertical;
         }
         .mode-switch {
             display: flex;
-            gap: 1rem;
+            gap: 10px;
             margin: 1rem 0;
+            flex-wrap: wrap;
         }
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 25px;
+            padding: 10px 20px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: transform 0.2s;
+            flex: 1;
+            min-width: 120px;
+            font-size: 14px;
         }
-        button:hover {
-            transform: translateY(-2px);
+        #output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding: 12px;
+            background: #fff8f5;
+            border-radius: 8px;
+            min-height: 100px;
+            font-size: 16px;
         }
         footer {
             text-align: center;
-            margin-top: 2rem;
             color: #666;
-            font-size: 0.9rem;
+            font-size: 12px;
+            padding: 1rem;
         }
-        @keyframes slideUp {
-            from { transform: translateY(20px); }
-            to { transform: translateY(0); }
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.9); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .title-image {
+                width: 40px;
+                height: 40px;
+            }
+            button {
+                width: 100%;
+                min-width: unset;
+            }
+            .mode-switch {
+                flex-direction: column;
+            }
+            textarea, #output {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -82,63 +101,89 @@
     <div class="header">
         <h1>
             <img src="https://i.111666.best/image/qzdJlvSvz1PON2ZAZtCmAz.png" class="title-image" alt="熊图标">
-            熊熊语双向转换器 🔥🍯
+            熊熊语转换器
         </h1>
-        <p>「 熊熊星球的秘密通信方式 」</p>
+        <p>「 支持双向转换的秘密通信 」</p>
     </div>
 
     <div class="converter-box">
-        <textarea id="input" placeholder="在这里输入中文或熊熊语..." rows="4"></textarea>
+        <textarea id="input" placeholder="输入中文或熊语..." rows="3"></textarea>
         
         <div class="mode-switch">
-            <button onclick="toggleMode('cn2bear')">中文 → 熊语 🐾</button>
-            <button onclick="toggleMode('bear2cn')">熊语 → 中文 📖</button>
+            <button onclick="setMode('cn2bear')">中文转熊语</button>
+            <button onclick="setMode('bear2cn')">熊语转中文</button>
         </div>
 
-        <pre id="output"></pre>
+        <div id="output"></div>
     </div>
 
     <footer>
-        <p>🐻 熊熊通信协议 v2.4 | © 2024 森林技术局</p>
-        <p>✨ 双击转换结果可快速复制</p>
+        <p>🐻 双击结果可复制 | 版本 v2.5</p>
     </footer>
 
     <script>
-        const bearDictionary = new Map([
-            ['我','啊哒'], ['你','啊哒!'], ['他','哒啊'], ['好','哒~~'],
-            ['是','啊?'], ['不','哒??'], ['了','哒~'], ['的','哒。'],
-            ['爱','❤️啊哒'], ['开心','🎉哒哒'], ['现在','⌚啊哒哒'],
-            ['今天','🌞哒哒'], ['明天','🌝哒啊'], ['这里','📍哒!']
-        ]);
+        // 增强字典（确保唯一性）
+        const bearMap = {
+            /* 中文到熊语 */
+            '我': '啊哒', '你': '啊哒!', '他': '哒啊',
+            '好': '哒~', '是': '啊?', '不': '哒??',
+            '了': '哒~', '的': '哒。', '在': '啊!哒',
+            '有': '!啊哒', '要': '哒!啊', '吗': '?哒',
+            /* 新增日常用语 */
+            '吃饭': '🍚哒哒', '睡觉': '💤哒~~', '工作': '💼哒!',
+            '朋友': '👫哒~', '开心': '😄哒!', '谢谢': '🙏哒~'
+        };
 
-        const reverseDictionary = new Map(
-            Array.from(bearDictionary).map(([k, v]) => [v, k])
-        );
+        // 构建反向字典（自动去重）
+        const reverseMap = new Map();
+        Object.entries(bearMap).forEach(([cn, bear]) => {
+            if (!reverseMap.has(bear)) {
+                reverseMap.set(bear, cn);
+            }
+        });
 
         let currentMode = 'cn2bear';
 
-        function smartConvert(text) {
-            return text.split('').map(char => {
-                return currentMode === 'cn2bear' 
-                    ? bearDictionary.get(char) || char
-                    : reverseDictionary.get(char) || char;
-            }).join(' ');
-        }
-
-        function toggleMode(mode) {
+        function setMode(mode) {
             currentMode = mode;
             document.getElementById('input').value = '';
             document.getElementById('output').textContent = '';
+            document.getElementById('input').focus();
         }
 
-        document.getElementById('input').addEventListener('input', function(e) {
-            const result = smartConvert(e.target.value);
-            document.getElementById('output').textContent = result;
+        function convertText(text) {
+            if (currentMode === 'cn2bear') {
+                return [...text].map(char => bearMap[char] || char).join(' ');
+            } else {
+                // 改进熊语分割逻辑
+                return text.split(/(\s+)/)
+                    .map(word => {
+                        const trimmed = word.trim();
+                        return trimmed ? reverseMap.get(trimmed) || word : ' ';
+                    })
+                    .join('');
+            }
+        }
+
+        // 实时转换（增加防抖处理）
+        let timeout;
+        document.getElementById('input').addEventListener('input', (e) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const result = convertText(e.target.value);
+                document.getElementById('output').textContent = result;
+            }, 200);
         });
 
+        // 双击复制功能
         document.getElementById('output').addEventListener('dblclick', function() {
-            navigator.clipboard.writeText(this.textContent);
-            alert('复制成功！🎉');
+            const text = this.textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    this.style.background = '#ffebcd';
+                    setTimeout(() => this.style.background = '', 500);
+                });
+            }
         });
     </script>
 </body>
