@@ -20,11 +20,18 @@
             text-align: center;
             margin: 2rem 0;
         }
+        .title-image {
+            max-width: 60px;
+            height: auto;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
         .converter-box {
             background: white;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             padding: 2rem;
+            animation: slideUp 0.6s ease-out;
         }
         textarea {
             width: 100%;
@@ -61,50 +68,22 @@
             color: #666;
             font-size: 0.9rem;
         }
-        .emoji-palette {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 0.5rem;
-            margin: 1rem 0;
-        }
-        .emoji-item {
-            padding: 0.3rem;
-            text-align: center;
-            background: #fff0e6;
-            border-radius: 5px;
-        }
-        /* 新增动画效果 */
-        @keyframes popIn {
-            0% { transform: scale(0.9); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
         @keyframes slideUp {
             from { transform: translateY(20px); }
             to { transform: translateY(0); }
         }
-
-        .converter-box {
-            animation: slideUp 0.6s ease-out;
-        }
-
-        button {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        button:hover {
-            transform: rotate(-2deg) scale(1.05);
-        }
-
-        #output {
-            transition: background-color 0.3s;
-            animation: popIn 0.4s ease-out;
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1> <img src="https://i.111666.best/image/qzdJlvSvz1PON2ZAZtCmAz.png" > 熊熊语双向转换器 🔥</h1>
+        <h1>
+            <img src="https://i.111666.best/image/qzdJlvSvz1PON2ZAZtCmAz.png" class="title-image" alt="熊图标">
+            熊熊语双向转换器 🔥🍯
+        </h1>
         <p>「 熊熊星球的秘密通信方式 」</p>
     </div>
 
@@ -117,140 +96,50 @@
         </div>
 
         <pre id="output"></pre>
-
-        <div class="emoji-palette" id="emojiHelp"></div>
     </div>
 
     <footer>
-        <p>🐻 熊熊通信协议 v2.3 | © 2024 森林技术局</p>
-        <p>✨ 使用提示：双击转换结果可以复制到剪贴板</p>
+        <p>🐻 熊熊通信协议 v2.4 | © 2024 森林技术局</p>
+        <p>✨ 双击转换结果可快速复制</p>
     </footer>
 
     <script>
-        // 增强版熊语字典（包含情感表达）
         const bearDictionary = new Map([
-            // 基础词汇
             ['我','啊哒'], ['你','啊哒!'], ['他','哒啊'], ['好','哒~~'],
             ['是','啊?'], ['不','哒??'], ['了','哒~'], ['的','哒。'],
-            
-            // 情感表达
-            ['爱','❤️啊哒'], ['开心','🎉哒哒'], ['难过','💧哒啊'], 
-            ['生气','💢哒!!'], ['惊喜','🎁啊?哒'], ['饿','🍖哒哒'],
-            
-            // 日常用语
-            ['谢谢','🍯哒~'], ['对不起','🙇哒...'], ['早安','🌞哒啊'],
-            ['晚安','🌙哒~~'], ['加油','🔥哒哒!'], ['危险','⚠️哒!!!'],
-            
-            // 疑问词
-            ['吗','?哒?'], ['呢','?哒~'], ['什么','??哒'], ['为什么','?啊?哒'],
-            
-            // 动词
-            ['吃','🍽哒'], ['睡','💤哒~'], ['玩','🎮哒!'], ['看','👀哒'],
-
-            // 时间相关
-            ['现在','⌚啊哒哒'], ['今天','🌞哒哒'], ['明天','🌝哒啊'], 
-            ['昨天','🌛哒啊'], ['小时','⏰哒~'], ['分钟','⏱哒~'],
-
-            // 地点相关
-            ['这里','📍哒!'], ['那里','🏔哒~'], ['家','🏠啊哒'], 
-            ['学校','🎓哒啊'], ['公司','💼哒!'], ['医院','🏥哒~~'],
-
-            // 常用动词
-            ['去','🚶哒!'], ['来','👋哒~'], ['买','🛍啊哒'], 
-            ['做','🛠哒啊'], ['学习','📖哒~~'], ['工作','💻哒!'],
-
-            // 物品名词
-            ['手机','📱哒哒'], ['电脑','💻哒~'], ['书','📚啊哒'],
-            ['钱','💰哒!!'], ['食物','🍔哒~'], ['水','💧哒啊'],
-
-            // 社交用语
-            ['你好','👋哒哒~'], ['再见','👋🌛哒'], ['欢迎','🎉啊哒'],
-            ['恭喜','🎊哒!!'], ['拜托','🙏哒~'], ['一起','👫哒哒'],
-
-            // 状态描述
-            ['快','⚡哒!'], ['慢','🐢哒~~'], ['热','🥵哒!'], 
-            ['冷','🥶哒~~'], ['累','😴哒~'], ['忙','💼🔥哒']，
-            
-            // 名词
-            ['家','🏠哒'], ['朋友','👫哒~'], ['火','🔥哒!'], ['蜂蜜','🍯哒']
+            ['爱','❤️啊哒'], ['开心','🎉哒哒'], ['现在','⌚啊哒哒'],
+            ['今天','🌞哒哒'], ['明天','🌝哒啊'], ['这里','📍哒!']
         ]);
 
-        // 自动生成反向字典
         const reverseDictionary = new Map(
             Array.from(bearDictionary).map(([k, v]) => [v, k])
         );
 
-        // 转换模式状态
         let currentMode = 'cn2bear';
 
-        // 智能转换核心
         function smartConvert(text) {
             return text.split('').map(char => {
-                if (currentMode === 'cn2bear') {
-                    return bearDictionary.get(char) || charToBearCode(char);
-                }
-                return reverseDictionary.get(char) || bearToChinese(char);
+                return currentMode === 'cn2bear' 
+                    ? bearDictionary.get(char) || char
+                    : reverseDictionary.get(char) || char;
             }).join(' ');
         }
 
-        // 未收录字符转换方案
-        function charToBearCode(char) {
-            const code = char.charCodeAt(0).toString(2);
-            return '啊' + code.replace(/0/g, '哒').replace(/1/g, '啊哒');
-        }
-
-        function bearToChinese(code) {
-            try {
-                const binary = code.replace(/啊/g,'1').replace(/哒/g,'0');
-                return String.fromCharCode(parseInt(binary, 2));
-            } catch {
-                return `❌${code}`;
-            }
-        }
-
-        // 界面交互
         function toggleMode(mode) {
             currentMode = mode;
             document.getElementById('input').value = '';
             document.getElementById('output').textContent = '';
-            updateEmojiHelp();
         }
 
-        // 在界面初始化时添加动画
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('.header').style.animation = 'popIn 0.8s';
-        });
-
-        // 在转换时添加动态效果
-        function smartConvert(text) {
-            document.getElementById('output').style.animation = 'none';
-            void document.getElementById('output').offsetWidth; // 触发重绘
-            document.getElementById('output').style.animation = 'popIn 0.4s';
-        // 实时转换
         document.getElementById('input').addEventListener('input', function(e) {
             const result = smartConvert(e.target.value);
             document.getElementById('output').textContent = result;
         });
 
-        // 双击复制
         document.getElementById('output').addEventListener('dblclick', function() {
             navigator.clipboard.writeText(this.textContent);
             alert('复制成功！🎉');
         });
-
-        // 表情符号帮助面板
-        function updateEmojiHelp() {
-            const emojiList = Array.from(bearDictionary.values())
-                .filter(v => v.match(/[❤️🎉💧💢🎁🍖]/))
-                .map(v => ({ code: v, meaning: reverseDictionary.get(v) }));
-            
-            document.getElementById('emojiHelp').innerHTML = emojiList
-                .map(e => `<div class="emoji-item">${e.code}<br>${e.meaning}</div>`)
-                .join('');
-        }
-
-        // 初始化
-        updateEmojiHelp();
     </script>
 </body>
 </html>
