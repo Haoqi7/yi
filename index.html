@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熊熊语转换器 V4.1</title>
+    <title>熊熊语转换器 V4.2</title>
     <style>
         :root {
             --primary: #FF6B6B;
@@ -79,16 +78,34 @@
             font-size: 0.9rem;
             padding: 1.5rem;
         }
-        .title-image {
-            width: 50px;
-            height: 50px;
-            vertical-align: middle;
-        }
         #status {
             color: #666;
             font-size: 0.9rem;
             padding: 10px;
             text-align: center;
+        }
+        .title-image {
+            width: 50px;
+            height: 50px;
+            vertical-align: middle;
+        }
+        .output-tag {
+            font-size: 0.8em;
+            color: #666;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin-left: 5px;
+            display: inline-block;
+        }
+        .dict-tag { background: #e3f2fd; }
+        .encode-tag { background: #f0f4c3; }
+        .symbol-tag { background: #ffcdd2; }
+        .decode-tag { background: #c8e6c9; }
+        #code-tags {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         @media (max-width: 480px) {
             .mode-switch {
@@ -99,11 +116,12 @@
 </head>
 <body>
     <div class="header">
-        <h1><img src="./logo.png" class="title-image">熊熊语转换器 🔥</h1>
+        <h1>
+            <img src="./logo.png" class="title-image">
+              熊熊语转换器 🔥
+        </h1>
         <p>一二布布星球的秘密通信方式</p>
     </div>
-
-
 
     <div class="converter-box">
         <textarea id="input" placeholder="输入中文或熊语..."></textarea>
@@ -112,8 +130,11 @@
             <button data-mode="cn2bear">中文 → 熊语</button>
             <button data-mode="bear2cn">熊语 → 中文</button>
         </div>
-        <div id="output"></div>
-        <div id="status">系统就绪</div>
+        <div id="output">
+            <div id="conversion-result"></div>
+            <div id="code-tags"></div>
+        </div>
+        <div id="status">✅ 系统初始化完成</div>
     </div>
 
     <footer>
@@ -140,7 +161,7 @@
 
             static async init() {
                 await this.#loadDictionary();
-                this.#updateStatus('✅ 系统初始化完成');
+                this.#updateStatus('✅ 系统运行中 - 词库加载完成');
             }
 
             static async #loadDictionary() {
@@ -192,9 +213,14 @@
                 const realMode = mode === 'auto' ? 
                     this.#detectLanguage(text) : mode;
                 
-                return realMode === 'cn2bear' ? 
+                const result = realMode === 'cn2bear' ? 
                     this.#encode(text) : 
                     this.#decode(text);
+                
+                return {
+                    displayText: result.map(r => r.text).join(' '),
+                    details: result
+                };
             }
 
             static #detectLanguage(text) {
@@ -204,11 +230,22 @@
             }
 
             static #encode(text) {
-                return [...text].map(char => 
-                    this.#dictionary.symbols.get(char) ||
-                    this.#dictionary.cn.get(char) ||
-                    this.#encodeBinary(char)
-                ).join(' ');
+                return [...text].map(char => {
+                    const symbol = this.#dictionary.symbols.get(char);
+                    if (symbol) {
+                        return { text: symbol, type: 'symbol' };
+                    }
+                    
+                    const dictResult = this.#dictionary.cn.get(char);
+                    if (dictResult) {
+                        return { text: dictResult, type: 'dict' };
+                    }
+                    
+                    return {
+                        text: this.#encodeBinary(char),
+                        type: 'encode'
+                    };
+                });
             }
 
             static #encodeBinary(char) {
@@ -222,12 +259,19 @@
             }
 
             static #decode(text) {
-                return text.split(/[\s·]+/)
-                    .map(token => {
-                        return this.#dictionary.bear.get(token) ||
-                               this.#decodeBinary(token) ||
-                               token;
-                    }).join('');
+                return text.split(/[\s·]+/).map(token => {
+                    const dictResult = this.#dictionary.bear.get(token);
+                    if (dictResult) {
+                        return { text: dictResult, type: 'dict' };
+                    }
+                    
+                    const decodeResult = this.#decodeBinary(token);
+                    if (decodeResult !== token) {
+                        return { text: decodeResult, type: 'decode' };
+                    }
+                    
+                    return { text: token, type: 'unknown' };
+                });
             }
 
             static #decodeBinary(token) {
@@ -277,11 +321,47 @@
                     clearTimeout(this.#debounceTimer);
                     this.#debounceTimer = setTimeout(() => {
                         const input = document.getElementById('input').value;
-                        const output = BearTranslator.convert(input, this.#currentMode);
-                        document.getElementById('output').textContent = output;
+                        const result = BearTranslator.convert(input, this.#currentMode);
+                        this.#updateUI(result);
                     }, delay);
                 };
             })();
+
+            static #updateUI(result) {
+                const resultDiv = document.getElementById('conversion-result');
+                const tagsDiv = document.getElementById('code-tags');
+                
+                // 显示主要结果
+                resultDiv.textContent = result.displayText;
+                
+                // 显示详细来源标签
+                tagsDiv.innerHTML = result.details.map(part => {
+                    let tagClass = '';
+                    let tagText = '';
+                    switch(part.type) {
+                        case 'dict':
+                            tagClass = 'dict-tag';
+                            tagText = '词典';
+                            break;
+                        case 'symbol':
+                            tagClass = 'symbol-tag';
+                            tagText = '符号';
+                            break;
+                        case 'encode':
+                            tagClass = 'encode-tag';
+                            tagText = '编码';
+                            break;
+                        case 'decode':
+                            tagClass = 'decode-tag';
+                            tagText = '解码';
+                            break;
+                        default:
+                            tagClass = '';
+                            tagText = '未知';
+                    }
+                    return `<span class="output-tag ${tagClass}">${tagText}</span>`;
+                }).join(' ');
+            }
         }
 
         // 初始化应用
