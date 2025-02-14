@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熊熊语转换器 V6.3</title>
+    <title>熊熊语转换器 V6.4</title>
+    <!-- 样式部分保持不变 -->
     <style>
         :root {
             --primary: #FF6B6B;
@@ -169,6 +170,7 @@
     </style>
 </head>
 <body>
+    <!-- HTML结构保持不变 -->
     <div class="header">
         <h1>
             <img src="./logo.png" class="title-image">
@@ -199,7 +201,11 @@
     <script>
         class BearTranslator {
             static #dictionary = {
-                cn: new Map(),
+                cn: {
+                    single: new Map(),    // 单字字典
+                    phrases: new Map(),   // 多字词字典（按长度分组）
+                    maxLength: 1          // 最长词汇长度
+                },
                 bear: new Map(),
                 loaded: false
             };
@@ -218,9 +224,7 @@
                     this.#dictionary.loaded = true;
                 } catch (e) {
                     this.#updateStatus('⚠️ 词库加载失败，仅使用编码转换');
-                    this.#dictionary.cn.clear();
-                    this.#dictionary.bear.clear();
-                    this.#dictionary.loaded = false;
+                    this.#resetDictionary();
                 }
             }
 
@@ -231,27 +235,40 @@
                 const data = await response.json();
                 if (!data.main) throw new Error('Invalid dictionary format');
                 
-                this.#dictionary.cn.clear();
-                this.#dictionary.bear.clear();
+                this.#resetDictionary();
                 
                 Object.entries(data.main).forEach(([key, value]) => {
-                    this.#dictionary.cn.set(key, value);
+                    // 填充中文→熊语字典
+                    if (key.length === 1) {
+                        this.#dictionary.cn.single.set(key, value);
+                    } else {
+                        const len = key.length;
+                        if (!this.#dictionary.cn.phrases.has(len)) {
+                            this.#dictionary.cn.phrases.set(len, new Map());
+                        }
+                        this.#dictionary.cn.phrases.get(len).set(key, value);
+                        this.#dictionary.cn.maxLength = Math.max(this.#dictionary.cn.maxLength, len);
+                    }
+                    
+                    // 填充熊语→中文字典
                     this.#dictionary.bear.set(value, key);
                 });
+            }
+
+            static #resetDictionary() {
+                this.#dictionary.cn.single.clear();
+                this.#dictionary.cn.phrases.clear();
+                this.#dictionary.bear.clear();
+                this.#dictionary.cn.maxLength = 1;
             }
 
             static convert(text, mode) {
                 const realMode = mode === 'auto' ? 
                     this.#detectLanguage(text) : mode;
                 
-                const result = realMode === 'cn2bear' ? 
-                    this.#encode(text) : 
-                    this.#decode(text);
-                
-                return {
-                    displayText: result.map(r => r.text).join(' '),
-                    details: result
-                };
+                return realMode === 'cn2bear' ? 
+                    this.#encodeChinese(text) : 
+                    this.#decodeBear(text);
             }
 
             static #detectLanguage(text) {
@@ -260,19 +277,50 @@
                 return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
             }
 
-            static #encode(text) {
-                return [...text].map(char => {
-                    if (this.#dictionary.loaded) {
-                        const dictResult = this.#dictionary.cn.get(char);
-                        if (dictResult) {
-                            return { text: dictResult, type: 'dict' };
+            static #encodeChinese(text) {
+                const result = [];
+                let pos = 0;
+                const totalLen = text.length;
+
+                while (pos < totalLen) {
+                    let matched = false;
+                    // 从最长可能词开始匹配
+                    const maxCheck = Math.min(
+                        this.#dictionary.cn.maxLength,
+                        totalLen - pos
+                    );
+
+                    for (let checkLen = maxCheck; checkLen >= 1; checkLen--) {
+                        const candidate = text.substr(pos, checkLen);
+                        const dictMap = checkLen === 1 ? 
+                            this.#dictionary.cn.single : 
+                            (this.#dictionary.cn.phrases.get(checkLen) || new Map());
+
+                        if (dictMap.has(candidate)) {
+                            result.push({
+                                text: dictMap.get(candidate),
+                                type: 'dict'
+                            });
+                            pos += checkLen;
+                            matched = true;
+                            break;
                         }
                     }
-                    return {
-                        text: this.#encodeBinary(char),
-                        type: 'encode'
-                    };
-                });
+
+                    if (!matched) {
+                        // 未匹配字符使用二进制编码
+                        result.push({
+                            text: this.#encodeBinary(text[pos]),
+                            type: 'encode'
+                        });
+                        pos++;
+                    }
+                }
+                
+                return {
+                    displayText: result.map(r => r.text).join(' '),
+                    details: result
+                };
             }
 
             static #encodeBinary(char) {
@@ -285,31 +333,40 @@
                 ).join('') + this.#config.separator;
             }
 
-            static #decode(text) {
-                return text.split(/[\s·]+/).map(token => {
-                    if (this.#dictionary.loaded) {
-                        const dictResult = this.#dictionary.bear.get(token);
-                        if (dictResult) {
-                            return { text: dictResult, type: 'dict' };
-                        }
+            static #decodeBear(text) {
+                const tokens = text.split(/[\s·]+/);
+                const result = [];
+
+                for (const token of tokens) {
+                    if (this.#dictionary.bear.has(token)) {
+                        result.push({
+                            text: this.#dictionary.bear.get(token),
+                            type: 'dict'
+                        });
+                    } else {
+                        const decoded = this.#decodeBinary(token);
+                        result.push({
+                            text: decoded !== token ? decoded : token,
+                            type: decoded !== token ? 'decode' : 'unknown'
+                        });
                     }
-                    const decodeResult = this.#decodeBinary(token);
-                    if (decodeResult !== token) {
-                        return { text: decodeResult, type: 'decode' };
-                    }
-                    return { text: token, type: 'unknown' };
-                });
+                }
+                
+                return {
+                    displayText: result.map(r => r.text).join(''),
+                    details: result
+                };
             }
 
             static #decodeBinary(token) {
                 const clean = token.replace(/[^哒啊]/g, '');
                 if (clean.length !== this.#config.bitLength) return token;
-                
+
                 const binStr = clean.replace(/哒/g, '1').replace(/啊/g, '0');
                 try {
                     return String.fromCharCode(parseInt(binStr, 2));
                 } catch {
-                    return ' ';
+                    return '�'; // 使用非法字符占位符
                 }
             }
 
@@ -364,7 +421,7 @@
                     let tagClass = '';
                     let tagText = '';
                     switch(part.type) {
-                        case 'dict':
+                        case 'dict': 
                             tagClass = 'dict-tag';
                             tagText = '词典';
                             break;
