@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熊熊语转换器 V6.3</title>
+    <title>熊熊语转换器 V6.0</title>
     <style>
         :root {
             --primary: #FF6B6B;
@@ -27,12 +27,12 @@
             margin: 2rem 0;
         }
         .converter-box {
-            position: relative;
             background: white;
             border-radius: 15px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             padding: 1.5rem;
             margin: 1.5rem 0;
+            position: relative;
         }
         textarea {
             width: 100%;
@@ -70,15 +70,17 @@
             padding: 15px;
             background: #fff8f5;
             border-radius: 10px;
-            min-height: 120px;
+            min-height: 150px;
             font-size: 16px;
             line-height: 1.6;
+            display: flex;
+            flex-direction: column;
         }
-        .copy-btn {
+        #copy-btn {
             position: absolute;
-            right: 15px;
-            top: 15px;
-            padding: 6px 12px;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
             font-size: 0.9em;
             background: var(--secondary);
         }
@@ -109,21 +111,31 @@
         }
         .dict-tag { background: #e3f2fd; }
         .encode-tag { background: #f0f4c3; }
+        .symbol-tag { background: #ffcdd2; }
         .decode-tag { background: #c8e6c9; }
         #code-tags {
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            margin-top: auto;
+            padding: 10px 0 0;
+            border-top: 1px dashed #ddd;
         }
         @media (max-width: 480px) {
             .mode-switch {
                 grid-template-columns: 1fr;
             }
-            .copy-btn {
-                position: static;
-                margin-top: 10px;
-                width: 100%;
+            #output {
+                min-height: 120px;
+                padding-top: 40px;
+            }
+            #copy-btn {
+                top: 5px;
+                right: 5px;
+                padding: 6px 10px;
+            }
+            .converter-box {
+                padding: 1rem;
+            }
+            textarea {
+                font-size: 14px;
             }
         }
     </style>
@@ -145,11 +157,11 @@
             <button data-mode="bear2cn">熊语 → 中文</button>
         </div>
         <div id="output">
-            <button class="copy-btn" onclick="App.copyResult()">复制结果</button>
+            <button id="copy-btn">复制结果</button>
             <div id="conversion-result"></div>
             <div id="code-tags"></div>
         </div>
-        <div id="status">⏳ 正在加载词库...</div>
+        <div id="status">✅ 系统初始化完成</div>
     </div>
 
     <footer>
@@ -161,7 +173,10 @@
             static #dictionary = {
                 cn: new Map(),
                 bear: new Map(),
-                loaded: false
+                symbols: new Map([
+                    ['!', '~'], ['？', '??'], ['！', '!!'], 
+                    ['❤', '♥'], ['...', '~~~']
+                ])
             };
 
             static #config = {
@@ -172,33 +187,50 @@
             };
 
             static async init() {
-                try {
-                    await this.#loadDictionary();
-                    this.#updateStatus('✅ 词库加载完成');
-                    this.#dictionary.loaded = true;
-                } catch (e) {
-                    this.#updateStatus('⚠️ 词库加载失败，仅使用编码转换');
-                    this.#dictionary.cn.clear();
-                    this.#dictionary.bear.clear();
-                    this.#dictionary.loaded = false;
-                }
+                await this.#loadDictionary();
+                this.#updateStatus('✅ 系统运行中 - 词库加载完成');
             }
 
             static async #loadDictionary() {
-                const response = await fetch('./dictionary.json');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                try {
+                    const response = await fetch('dictionary.json');
+                    const data = await response.json();
+                    
+                    Object.entries(data.main).forEach(([cn, bear]) => {
+                        this.#dictionary.cn.set(cn, bear);
+                        this.#dictionary.bear.set(bear, cn);
+                    });
+                    
+                    Object.entries(data.symbols).forEach(([key, val]) => {
+                        this.#dictionary.symbols.set(key, val);
+                        this.#dictionary.bear.set(val, key);
+                    });
+                    
+                } catch (e) {
+                    this.#updateStatus('⚠️ 词典加载失败，使用基础词库');
+                    this.#loadFallbackDict();
+                }
+            }
+
+            static #loadFallbackDict() {
+                const fallback = {
+                    main: {
+                        "我": "哒", "你": "啊哒", "的": "啊",
+                        "了": "哒哒", "是": "啊啊啊"
+                    },
+                    symbols: {
+                        "!": "~", "？": "??"
+                    }
+                };
                 
-                const data = await response.json();
-                if (!data.main) throw new Error('Invalid dictionary format');
+                Object.entries(fallback.main).forEach(([cn, bear]) => {
+                    this.#dictionary.cn.set(cn, bear);
+                    this.#dictionary.bear.set(bear, cn);
+                });
                 
-                // 清除旧数据
-                this.#dictionary.cn.clear();
-                this.#dictionary.bear.clear();
-                
-                // 加载新数据
-                Object.entries(data.main).forEach(([key, value]) => {
-                    this.#dictionary.cn.set(key, value);
-                    this.#dictionary.bear.set(value, key);
+                Object.entries(fallback.symbols).forEach(([k, v]) => {
+                    this.#dictionary.symbols.set(k, v);
+                    this.#dictionary.bear.set(v, k);
                 });
             }
 
@@ -224,15 +256,16 @@
 
             static #encode(text) {
                 return [...text].map(char => {
-                    // 优先使用字典转换
-                    if (this.#dictionary.loaded) {
-                        const dictResult = this.#dictionary.cn.get(char);
-                        if (dictResult) {
-                            return { text: dictResult, type: 'dict' };
-                        }
+                    const symbol = this.#dictionary.symbols.get(char);
+                    if (symbol) {
+                        return { text: symbol, type: 'symbol' };
                     }
                     
-                    // 字典未加载或找不到时使用编码
+                    const dictResult = this.#dictionary.cn.get(char);
+                    if (dictResult) {
+                        return { text: dictResult, type: 'dict' };
+                    }
+                    
                     return {
                         text: this.#encodeBinary(char),
                         type: 'encode'
@@ -252,15 +285,11 @@
 
             static #decode(text) {
                 return text.split(/[\s·]+/).map(token => {
-                    // 优先使用字典转换
-                    if (this.#dictionary.loaded) {
-                        const dictResult = this.#dictionary.bear.get(token);
-                        if (dictResult) {
-                            return { text: dictResult, type: 'dict' };
-                        }
+                    const dictResult = this.#dictionary.bear.get(token);
+                    if (dictResult) {
+                        return { text: dictResult, type: 'dict' };
                     }
                     
-                    // 尝试二进制解码
                     const decodeResult = this.#decodeBinary(token);
                     if (decodeResult !== token) {
                         return { text: decodeResult, type: 'decode' };
@@ -301,6 +330,23 @@
                     btn.addEventListener('click', () => 
                         this.#setMode(btn.dataset.mode));
                 });
+
+                // 添加复制功能
+                document.getElementById('copy-btn').addEventListener('click', () => {
+                    const text = document.getElementById('conversion-result').textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.#showCopyFeedback();
+                    });
+                });
+            }
+
+            static #showCopyFeedback() {
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✅ 已复制!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 1500);
             }
 
             static #setMode(mode) {
@@ -333,40 +379,17 @@
                     let tagClass = '';
                     let tagText = '';
                     switch(part.type) {
-                        case 'dict':
-                            tagClass = 'dict-tag';
-                            tagText = '词典';
-                            break;
-                        case 'encode':
-                            tagClass = 'encode-tag';
-                            tagText = '编码';
-                            break;
-                        case 'decode':
-                            tagClass = 'decode-tag';
-                            tagText = '解码';
-                            break;
-                        default:
-                            tagClass = '';
-                            tagText = '未知';
+                        case 'dict': tagClass = 'dict-tag'; tagText = '词典'; break;
+                        case 'symbol': tagClass = 'symbol-tag'; tagText = '符号'; break;
+                        case 'encode': tagClass = 'encode-tag'; tagText = '编码'; break;
+                        case 'decode': tagClass = 'decode-tag'; tagText = '解码'; break;
+                        default: tagText = '未知';
                     }
                     return `<span class="output-tag ${tagClass}">${tagText}</span>`;
                 }).join(' ');
             }
-
-            static copyResult() {
-                const text = document.getElementById('conversion-result').textContent;
-                navigator.clipboard.writeText(text).then(() => {
-                    const status = document.getElementById('status');
-                    status.textContent = '✅ 已复制到剪贴板！';
-                    setTimeout(() => status.textContent = '✅ 系统运行中', 2000);
-                }).catch(err => {
-                    console.error('复制失败:', err);
-                    document.getElementById('status').textContent = '⚠️ 复制失败，请手动选择复制';
-                });
-            }
         }
 
-        // 初始化应用
         App.init();
     </script>
 </body>
