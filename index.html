@@ -24,7 +24,19 @@
         }
         .header {
             text-align: center;
-            margin: 2rem 0;
+            margin: 0.8rem 0 1.2rem;
+        }
+        .header h1 {
+            margin: 0.5em 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .header p {
+            margin-bottom: 0.3em;
+            color: #666;
         }
         .converter-box {
             position: relative;
@@ -141,15 +153,26 @@
                 padding: 12px;
                 font-size: 15px;
             }
+            .header h1 {
+                font-size: 1.6em;
+                margin: 0.3em 0;
+                flex-wrap: wrap;
+            }
+            .header p {
+                font-size: 0.9em;
+            }
+            .title-image {
+                width: 40px;
+                height: 40px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- 保持原有HTML结构不变 -->
     <div class="header">
         <h1>
             <img src="./logo.png" class="title-image">
-              熊熊语转换器 🔥
+            <span>熊熊语转换器 🔥</span>
         </h1>
         <p>一二布布星球的秘密通信方式</p>
     </div>
@@ -173,7 +196,6 @@
         <p>© 2024 熊语研究协会 | 采用熊耳编码标准 v2</p>
     </footer>
 
-    <!-- 保持原有JavaScript不变 -->
     <script>
         class BearTranslator {
             static #dictionary = {
@@ -209,11 +231,9 @@
                 const data = await response.json();
                 if (!data.main) throw new Error('Invalid dictionary format');
                 
-                // 清除旧数据
                 this.#dictionary.cn.clear();
                 this.#dictionary.bear.clear();
                 
-                // 加载新数据
                 Object.entries(data.main).forEach(([key, value]) => {
                     this.#dictionary.cn.set(key, value);
                     this.#dictionary.bear.set(value, key);
@@ -242,15 +262,12 @@
 
             static #encode(text) {
                 return [...text].map(char => {
-                    // 优先使用字典转换
                     if (this.#dictionary.loaded) {
                         const dictResult = this.#dictionary.cn.get(char);
                         if (dictResult) {
                             return { text: dictResult, type: 'dict' };
                         }
                     }
-                    
-                    // 字典未加载或找不到时使用编码
                     return {
                         text: this.#encodeBinary(char),
                         type: 'encode'
@@ -270,20 +287,16 @@
 
             static #decode(text) {
                 return text.split(/[\s·]+/).map(token => {
-                    // 优先使用字典转换
                     if (this.#dictionary.loaded) {
                         const dictResult = this.#dictionary.bear.get(token);
                         if (dictResult) {
                             return { text: dictResult, type: 'dict' };
                         }
                     }
-                    
-                    // 尝试二进制解码
                     const decodeResult = this.#decodeBinary(token);
                     if (decodeResult !== token) {
                         return { text: decodeResult, type: 'decode' };
                     }
-                    
                     return { text: token, type: 'unknown' };
                 });
             }
@@ -384,7 +397,6 @@
             }
         }
 
-        // 初始化应用
         App.init();
     </script>
 </body>
