@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熊熊语转换器 V6.4</title>
-    <!-- 样式部分保持不变 -->
+    <title>熊熊语转换器 V6.5</title>
     <style>
         :root {
             --primary: #FF6B6B;
@@ -170,7 +169,6 @@
     </style>
 </head>
 <body>
-    <!-- HTML结构保持不变 -->
     <div class="header">
         <h1>
             <img src="./logo.png" class="title-image">
@@ -195,16 +193,16 @@
     </div>
 
     <footer>
-        <p>© 2024 熊语研究协会 | 采用熊耳编码标准 v2</p>
+        <p>© 2024 熊语研究协会 | 采用熊耳编码标准 v3</p>
     </footer>
 
     <script>
         class BearTranslator {
             static #dictionary = {
                 cn: {
-                    single: new Map(),    // 单字字典
-                    phrases: new Map(),   // 多字词字典（按长度分组）
-                    maxLength: 1          // 最长词汇长度
+                    single: new Map(),    // 单字字典（含压缩编码）
+                    phrases: new Map(),   // 多字词字典
+                    maxLength: 1
                 },
                 bear: new Map(),
                 loaded: false
@@ -213,8 +211,14 @@
             static #config = {
                 bitLength: 16,
                 separator: '·',
-                binaryMap: { '0': '啊', '1': '哒' },
-                minBearLength: 3
+                base64Map: new Map([
+                    ['00', '啊'], ['01', '哒'],
+                    ['10', '.'], ['11', '-']
+                ]),
+                reverseBaseMap: new Map([
+                    ['啊', '00'], ['哒', '01'],
+                    ['.', '10'], ['-', '11']
+                ])
             };
 
             static async init() {
@@ -230,16 +234,19 @@
 
             static async #loadDictionary() {
                 const response = await fetch('./dictionary.json');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
                 
                 const data = await response.json();
-                if (!data.main) throw new Error('Invalid dictionary format');
+                if (!data.main) throw new Error('无效的字典格式');
                 
                 this.#resetDictionary();
                 
                 Object.entries(data.main).forEach(([key, value]) => {
-                    // 填充中文→熊语字典
-                    if (key.length === 1) {
+                    // 处理中文字典
+                    if (key.startsWith('utf8:')) {
+                        const realKey = key.slice(5);
+                        this.#dictionary.cn.single.set(realKey, value);
+                    } else if (key.length === 1) {
                         this.#dictionary.cn.single.set(key, value);
                     } else {
                         const len = key.length;
@@ -250,8 +257,8 @@
                         this.#dictionary.cn.maxLength = Math.max(this.#dictionary.cn.maxLength, len);
                     }
                     
-                    // 填充熊语→中文字典
-                    this.#dictionary.bear.set(value, key);
+                    // 处理熊语字典
+                    this.#dictionary.bear.set(value, key.replace('utf8:', ''));
                 });
             }
 
@@ -273,7 +280,7 @@
 
             static #detectLanguage(text) {
                 const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-                const bearTokens = text.match(/[哒啊·~]/g)?.length || 0;
+                const bearTokens = text.match(/[哒啊·~.-]/g)?.length || 0;
                 return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
             }
 
@@ -284,7 +291,19 @@
 
                 while (pos < totalLen) {
                     let matched = false;
-                    // 从最长可能词开始匹配
+                    
+                    // 优先检查压缩编码
+                    const compressKey = text[pos];
+                    if (this.#dictionary.cn.single.has(compressKey)) {
+                        result.push({
+                            text: this.#dictionary.cn.single.get(compressKey),
+                            type: 'dict'
+                        });
+                        pos++;
+                        continue;
+                    }
+
+                    // 多词匹配逻辑
                     const maxCheck = Math.min(
                         this.#dictionary.cn.maxLength,
                         totalLen - pos
@@ -308,7 +327,6 @@
                     }
 
                     if (!matched) {
-                        // 未匹配字符使用二进制编码
                         result.push({
                             text: this.#encodeBinary(text[pos]),
                             type: 'encode'
@@ -318,9 +336,25 @@
                 }
                 
                 return {
-                    displayText: result.map(r => r.text).join(' '),
+                    displayText: this.#joinResults(result),
                     details: result
                 };
+            }
+
+            static #joinResults(results) {
+                let output = '';
+                let prevType = null;
+                
+                results.forEach((current, index) => {
+                    if (index > 0) {
+                        const needsSep = prevType === 'encode' || current.type === 'dict';
+                        if (needsSep) output += this.#config.separator;
+                    }
+                    output += current.text;
+                    prevType = current.type;
+                });
+                
+                return output;
             }
 
             static #encodeBinary(char) {
@@ -328,13 +362,17 @@
                     .toString(2)
                     .padStart(this.#config.bitLength, '0');
                 
-                return [...binStr].map(b => 
-                    this.#config.binaryMap[b]
-                ).join('') + this.#config.separator;
+                let encoded = '';
+                for(let i=0; i<binStr.length; i+=2) {
+                    const pair = binStr.substr(i, 2);
+                    encoded += this.#config.base64Map.get(pair) || '??';
+                }
+                
+                return encoded.length > 4 ? encoded + this.#config.separator : encoded;
             }
 
             static #decodeBear(text) {
-                const tokens = text.split(/[\s·]+/);
+                const tokens = text.split(new RegExp(`[${this.#config.separator}\\s]+`));
                 const result = [];
 
                 for (const token of tokens) {
@@ -359,14 +397,18 @@
             }
 
             static #decodeBinary(token) {
-                const clean = token.replace(/[^哒啊]/g, '');
-                if (clean.length !== this.#config.bitLength) return token;
+                const clean = token.replace(/[^啊哒.-]/g, '');
+                if(clean.length !== this.#config.bitLength/2) return token;
 
-                const binStr = clean.replace(/哒/g, '1').replace(/啊/g, '0');
+                let binStr = '';
+                for(const c of clean) {
+                    binStr += this.#config.reverseBaseMap.get(c) || '00';
+                }
+
                 try {
                     return String.fromCharCode(parseInt(binStr, 2));
                 } catch {
-                    return '�'; // 使用非法字符占位符
+                    return '�';
                 }
             }
 
