@@ -16,61 +16,63 @@
             padding: 0;
         }
         body {
-            max-width: 800px;
+            max-width: 600px; /* 缩小最大宽度 */
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px; /* 缩小内边距 */
             background: var(--bg);
             font-family: -apple-system, system-ui;
         }
         .header {
             text-align: center;
-            margin: 0.8rem 0 1.2rem;
+            margin: 0.4rem 0 0.6rem; /* 缩小上下外边距 */
         }
         .header h1 {
-            margin: 0.5em 0;
-            font-size: 1.8em;
+            margin: 0.2em 0; /* 缩小上下外边距 */
+            font-size: 1.4em; /* 缩小字体大小 */
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 4px; /* 缩小间距 */
         }
         .header p {
-            margin-bottom: 0.3em;
+            margin-bottom: 0.2em; /* 缩小下边距 */
             color: #666;
+            font-size: 0.8em; /* 缩小字体大小 */
         }
         .converter-box {
             position: relative;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
+            border-radius: 10px; /* 缩小圆角 */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05); /* 减小阴影 */
+            padding: 1rem; /* 缩小内边距 */
+            margin: 1rem 0; /* 缩小外边距 */
         }
         textarea {
             width: 100%;
-            padding: 15px;
-            border: 2px solid var(--secondary);
-            border-radius: 10px;
-            font-size: 16px;
-            min-height: 120px;
+            padding: 10px; /* 缩小内边距 */
+            border: 1px solid var(--secondary); /* 减小边框宽度 */
+            border-radius: 8px; /* 缩小圆角 */
+            font-size: 14px; /* 缩小字体大小 */
+            min-height: 100px; /* 缩小最小高度 */
             resize: vertical;
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem; /* 缩小下边距 */
         }
         .mode-switch {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin: 1.5rem 0;
+            gap: 8px; /* 缩小间距 */
+            margin: 1rem 0; /* 缩小外边距 */
         }
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 8px; /* 缩小内边距 */
+            border-radius: 6px; /* 缩小圆角 */
             cursor: pointer;
             transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
+            font-size: 0.9em; /* 缩小字体大小 */
         }
         button:active {
             transform: scale(0.93);
@@ -78,7 +80,7 @@
         }
         button.active {
             background: #FF4500;
-            box-shadow: 0 2px 6px rgba(255,107,107,0.3);
+            box-shadow: 0 1px 3px rgba(255,107,107,0.2); /* 减小阴影 */
         }
         #output {
             position: relative;
@@ -86,45 +88,45 @@
             flex-direction: column;
             white-space: pre-wrap;
             word-break: break-word;
-            padding: 15px;
+            padding: 10px; /* 缩小内边距 */
             background: #fff8f5;
-            border-radius: 10px;
-            min-height: 120px;
-            font-size: 16px;
-            line-height: 1.6;
+            border-radius: 8px; /* 缩小圆角 */
+            min-height: 100px; /* 缩小最小高度 */
+            font-size: 14px; /* 缩小字体大小 */
+            line-height: 1.4; /* 缩小行高 */
         }
         .copy-btn {
             position: absolute;
-            right: 15px;
-            top: 15px;
-            padding: 6px 12px;
-            font-size: 0.9em;
+            right: 10px; /* 调整位置 */
+            top: 10px; /* 调整位置 */
+            padding: 4px 8px; /* 缩小内边距 */
+            font-size: 0.8em; /* 缩小字体大小 */
             background: var(--secondary);
             z-index: 1;
         }
         footer {
             text-align: center;
             color: #666;
-            font-size: 0.9rem;
-            padding: 1.5rem;
+            font-size: 0.8rem; /* 缩小字体大小 */
+            padding: 1rem; /* 缩小内边距 */
         }
         #status {
             color: #666;
-            font-size: 0.9rem;
-            padding: 10px;
+            font-size: 0.8rem; /* 缩小字体大小 */
+            padding: 8px; /* 缩小内边距 */
             text-align: center;
         }
         .title-image {
-            width: 50px;
-            height: 50px;
+            width: 30px; /* 缩小图片宽度 */
+            height: 30px; /* 缩小图片高度 */
             vertical-align: middle;
         }
         .output-tag {
-            font-size: 0.8em;
+            font-size: 0.7em; /* 缩小字体大小 */
             color: #666;
             padding: 2px 4px;
             border-radius: 3px;
-            margin-left: 5px;
+            margin-left: 3px; /* 缩小间距 */
             display: inline-block;
         }
         .dict-tag { background: #e3f2fd; }
@@ -132,43 +134,43 @@
         .decode-tag { background: #c8e6c9; }
         #code-tags {
             margin-top: auto;
-            padding: 10px 0 0;
+            padding: 8px 0 0; /* 缩小内边距 */
             width: 100%;
             border-top: 1px solid #eee;
         }
         #conversion-result {
             flex: 1;
-            padding-bottom: 15px;
+            padding-bottom: 10px; /* 缩小下边距 */
         }
         @media (max-width: 420px) {
             .mode-switch {
                 grid-template-columns: 1fr;
             }
             .converter-box {
-                padding: 1rem;
+                padding: 0.8rem; /* 缩小内边距 */
             }
             #output {
-                padding: 15px 10px;
+                padding: 10px 8px; /* 缩小内边距 */
             }
             .copy-btn {
-                padding: 8px;
-                font-size: 0.8em;
+                padding: 6px; /* 缩小内边距 */
+                font-size: 0.7em; /* 缩小字体大小 */
             }
             textarea {
-                padding: 12px;
-                font-size: 15px;
+                padding: 8px; /* 缩小内边距 */
+                font-size: 13px; /* 缩小字体大小 */
             }
             .header h1 {
-                font-size: 1.6em;
-                margin: 0.3em 0;
+                font-size: 1.2em; /* 缩小字体大小 */
+                margin: 0.2em 0; /* 缩小外边距 */
                 flex-wrap: wrap;
             }
             .header p {
-                font-size: 0.9em;
+                font-size: 0.7em; /* 缩小字体大小 */
             }
             .title-image {
-                width: 40px;
-                height: 40px;
+                width: 25px; /* 缩小图片宽度 */
+                height: 25px; /* 缩小图片高度 */
             }
         }
     </style>
@@ -197,7 +199,20 @@
         <div id="status">⏳ 正在加载词库...</div>
     </div>
 
-    <footer><p>© 2024 熊语研究协会 | 采用熊耳编码</p></footer>
+    <footer>
+                   <h4>- 评论 -</h4>
+                <div id="tcomment"></div>
+                <script src="https://cdn.staticfile.org/twikoo/1.6.8/twikoo.all.min.js"></script>
+                <script>
+                twikoo.init({
+                    envId: 'https://www.haoqiyun.tk/', // 腾讯云环境填 envId；Vercel 环境填地址（https://xxx.vercel.app）
+                    el: '#tcomment', // 容器元素
+                    // region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，腾讯云环境填 ap-shanghai 或 ap-guangzhou；Vercel 环境不填
+                    // path: location.pathname, // 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
+                    // lang: 'zh-CN', // 用于手动设定评论区语言，支持的语言列表 https://github.com/imaegoo/twikoo/blob/main/src/client/utils/i18n/index.js
+                })
+                </script>
+<p>© 2024 熊语研究协会 | 采用熊耳编码</p></footer>
 
     <script src="./js/bear-translator.js"></script>
     <script src="./js/app.js"></script>
