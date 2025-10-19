@@ -16,63 +16,67 @@
             padding: 0;
         }
         body {
-            max-width: 600px; /* 缩小最大宽度 */
+            max-width: 600px;
             margin: 0 auto;
-            padding: 10px; /* 缩小内边距 */
+            padding: 10px;
             background: var(--bg);
             font-family: -apple-system, system-ui;
         }
         .header {
             text-align: center;
-            margin: 0.4rem 0 0.6rem; /* 缩小上下外边距 */
+            margin: 0.4rem 0 0.6rem;
         }
         .header h1 {
-            margin: 0.2em 0; /* 缩小上下外边距 */
-            font-size: 1.4em; /* 缩小字体大小 */
+            margin: 0.2em 0;
+            font-size: 1.4em;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px; /* 缩小间距 */
+            gap: 4px;
         }
         .header p {
-            margin-bottom: 0.2em; /* 缩小下边距 */
+            margin-bottom: 0.2em;
             color: #666;
-            font-size: 0.8em; /* 缩小字体大小 */
+            font-size: 0.8em;
         }
         .converter-box {
             position: relative;
             background: white;
-            border-radius: 10px; /* 缩小圆角 */
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05); /* 减小阴影 */
-            padding: 1rem; /* 缩小内边距 */
-            margin: 1rem 0; /* 缩小外边距 */
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            padding: 1rem;
+            margin: 1rem 0;
         }
         textarea {
             width: 100%;
-            padding: 10px; /* 缩小内边距 */
-            border: 1px solid var(--secondary); /* 减小边框宽度 */
-            border-radius: 8px; /* 缩小圆角 */
-            font-size: 14px; /* 缩小字体大小 */
-            min-height: 100px; /* 缩小最小高度 */
+            padding: 10px;
+            border: 1px solid var(--secondary);
+            border-radius: 8px;
+            font-size: 14px;
+            min-height: 100px;
             resize: vertical;
-            margin-bottom: 0.8rem; /* 缩小下边距 */
+            margin-bottom: 0.8rem;
         }
         .mode-switch {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px; /* 缩小间距 */
-            margin: 1rem 0; /* 缩小外边距 */
+            gap: 8px;
+            margin: 1rem 0;
         }
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 8px; /* 缩小内边距 */
-            border-radius: 6px; /* 缩小圆角 */
+            padding: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             -webkit-tap-highlight-color: transparent;
-            font-size: 0.9em; /* 缩小字体大小 */
+            font-size: 0.9em;
         }
         button:active {
             transform: scale(0.93);
@@ -80,7 +84,7 @@
         }
         button.active {
             background: #FF4500;
-            box-shadow: 0 1px 3px rgba(255,107,107,0.2); /* 减小阴影 */
+            box-shadow: 0 1px 3px rgba(255,107,107,0.2);
         }
         #output {
             position: relative;
@@ -88,45 +92,45 @@
             flex-direction: column;
             white-space: pre-wrap;
             word-break: break-word;
-            padding: 10px; /* 缩小内边距 */
+            padding: 10px;
             background: #fff8f5;
-            border-radius: 8px; /* 缩小圆角 */
-            min-height: 100px; /* 缩小最小高度 */
-            font-size: 14px; /* 缩小字体大小 */
-            line-height: 1.4; /* 缩小行高 */
+            border-radius: 8px;
+            min-height: 100px;
+            font-size: 14px;
+            line-height: 1.4;
         }
         .copy-btn {
             position: absolute;
-            right: 10px; /* 调整位置 */
-            top: 10px; /* 调整位置 */
-            padding: 4px 8px; /* 缩小内边距 */
-            font-size: 0.8em; /* 缩小字体大小 */
+            right: 10px;
+            top: 10px;
+            padding: 4px 8px;
+            font-size: 0.8em;
             background: var(--secondary);
             z-index: 1;
         }
         footer {
             text-align: center;
             color: #666;
-            font-size: 0.8rem; /* 缩小字体大小 */
-            padding: 1rem; /* 缩小内边距 */
+            font-size: 0.8rem;
+            padding: 1rem;
         }
         #status {
             color: #666;
-            font-size: 0.8rem; /* 缩小字体大小 */
-            padding: 8px; /* 缩小内边距 */
+            font-size: 0.8rem;
+            padding: 8px;
             text-align: center;
         }
         .title-image {
-            width: 30px; /* 缩小图片宽度 */
-            height: 30px; /* 缩小图片高度 */
+            width: 30px;
+            height: 30px;
             vertical-align: middle;
         }
         .output-tag {
-            font-size: 0.7em; /* 缩小字体大小 */
+            font-size: 0.7em;
             color: #666;
             padding: 2px 4px;
             border-radius: 3px;
-            margin-left: 3px; /* 缩小间距 */
+            margin-left: 3px;
             display: inline-block;
         }
         .dict-tag { background: #e3f2fd; }
@@ -134,43 +138,53 @@
         .decode-tag { background: #c8e6c9; }
         #code-tags {
             margin-top: auto;
-            padding: 8px 0 0; /* 缩小内边距 */
+            padding: 8px 0 0;
             width: 100%;
             border-top: 1px solid #eee;
         }
         #conversion-result {
             flex: 1;
-            padding-bottom: 10px; /* 缩小下边距 */
+            padding-bottom: 10px;
+        }
+        .dictionary-option {
+            margin: 0.8rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dictionary-option label {
+            font-size: 0.9em;
+            color: #666;
         }
         @media (max-width: 420px) {
             .mode-switch {
                 grid-template-columns: 1fr;
             }
             .converter-box {
-                padding: 0.8rem; /* 缩小内边距 */
+                padding: 0.8rem;
             }
             #output {
-                padding: 10px 8px; /* 缩小内边距 */
+                padding: 10px 8px;
             }
             .copy-btn {
-                padding: 6px; /* 缩小内边距 */
-                font-size: 0.7em; /* 缩小字体大小 */
+                padding: 6px;
+                font-size: 0.7em;
             }
             textarea {
-                padding: 8px; /* 缩小内边距 */
-                font-size: 13px; /* 缩小字体大小 */
+                padding: 8px;
+                font-size: 13px;
             }
             .header h1 {
-                font-size: 1.2em; /* 缩小字体大小 */
-                margin: 0.2em 0; /* 缩小外边距 */
+                font-size: 1.2em;
+                margin: 0.2em 0;
                 flex-wrap: wrap;
             }
             .header p {
-                font-size: 0.7em; /* 缩小字体大小 */
+                font-size: 0.7em;
             }
             .title-image {
-                width: 25px; /* 缩小图片宽度 */
-                height: 25px; /* 缩小图片高度 */
+                width: 25px;
+                height: 25px;
             }
         }
     </style>
@@ -191,6 +205,10 @@
             <button data-mode="cn2bear">中文 → 熊语</button>
             <button data-mode="bear2cn">熊语 → 中文</button>
         </div>
+        <div class="dictionary-option">
+            <input type="checkbox" id="useDictionary" checked>
+            <label for="useDictionary">使用字典翻译（取消则仅使用编码）</label>
+        </div>
         <div id="output">
             <button class="copy-btn" onclick="App.copyResult()">复制结果</button>
             <div id="conversion-result"></div>
@@ -204,30 +222,17 @@
     <div id="tcomment" style="display: none;"></div>
     <script src="https://cdn.staticfile.org/twikoo/1.6.8/twikoo.all.min.js"></script>
     <script>
-        // 确保 DOM 加载完成后再执行代码
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始化 Twikoo
             twikoo.init({
-                envId: 'https://www.haoqiyun.tk/', // 腾讯云环境填 envId；Vercel 环境填地址（https://xxx.vercel.app）
-                el: '#tcomment', // 容器元素
-                // region: 'ap-guangzhou', // 环境地域，默认为 ap-shanghai，腾讯云环境填 ap-shanghai 或 ap-guangzhou；Vercel 环境不填
-                // path: location.pathname, // 用于区分不同文章的自定义 js 路径，如果您的文章路径不是 location.pathname，需传此参数
-                // lang: 'zh-CN', // 用于手动设定评论区语言，支持的语言列表 https://github.com/imaegoo/twikoo/blob/main/src/client/utils/i18n/index.js
+                envId: 'https://www.haoqiyun.tk/',
+                el: '#tcomment',
             });
 
-            // 获取评论按钮元素
             var commentBtn = document.getElementById('commentBtn');
-            // 新增函数：切换评论区显示状态
             function toggleComment() {
                 var comment = document.getElementById('tcomment');
-                if (comment.style.display === 'none') {
-                    comment.style.display = 'block';
-                } else {
-                    comment.style.display = 'none';
-                }
+                comment.style.display = comment.style.display === 'none' ? 'block' : 'none';
             }
-
-            // 为评论按钮添加点击事件监听器
             commentBtn.addEventListener('click', toggleComment);
         });
     </script>
