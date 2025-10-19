@@ -11,12 +11,19 @@ class App {
     static init() {
         BearTranslator.init();
         
+        // 输入框变化时转换（带防抖）
         document.getElementById('input').addEventListener('input', () => 
             this.#convertWithDebounce(300));
         
+        // 模式切换按钮
         document.querySelectorAll('.mode-switch button').forEach(btn => {
             btn.addEventListener('click', () => 
                 this.#setMode(btn.dataset.mode));
+        });
+
+        // 字典选择框变化时实时更新
+        document.getElementById('useDictionary').addEventListener('change', () => {
+            this.#convertWithDebounce(0);
         });
     }
 
@@ -33,7 +40,10 @@ class App {
         clearTimeout(this.#debounceTimer);
         this.#debounceTimer = setTimeout(() => {
             const input = document.getElementById('input').value;
-            const result = BearTranslator.convert(input, this.#currentMode);
+            // 获取字典选择状态
+            const useDict = document.getElementById('useDictionary').checked;
+            // 传递useDict参数
+            const result = BearTranslator.convert(input, this.#currentMode, useDict);
             this.#updateUI(result);
         }, delay);
     }).bind(App);
@@ -44,6 +54,7 @@ class App {
         
         resultDiv.innerHTML = this.#sanitize(result.displayText);
         
+        // 显示每个部分的转换类型（字典/编码）
         tagsDiv.innerHTML = result.details.map(part => {
             let tagClass = '';
             let tagText = '';
