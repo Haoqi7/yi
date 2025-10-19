@@ -71,10 +71,6 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
             -webkit-tap-highlight-color: transparent;
             font-size: 0.9em;
         }
@@ -146,16 +142,6 @@
             flex: 1;
             padding-bottom: 10px;
         }
-        .dictionary-option {
-            margin: 0.8rem 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .dictionary-option label {
-            font-size: 0.9em;
-            color: #666;
-        }
         @media (max-width: 420px) {
             .mode-switch {
                 grid-template-columns: 1fr;
@@ -204,10 +190,6 @@
             <button class="active" data-mode="auto">自动检测 🔄</button>
             <button data-mode="cn2bear">中文 → 熊语</button>
             <button data-mode="bear2cn">熊语 → 中文</button>
-        </div>
-        <div class="dictionary-option">
-            <input type="checkbox" id="useDictionary" checked>
-            <label for="useDictionary">使用字典翻译（取消则仅使用编码）</label>
         </div>
         <div id="output">
             <button class="copy-btn" onclick="App.copyResult()">复制结果</button>
