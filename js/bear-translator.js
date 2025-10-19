@@ -11,7 +11,7 @@ class BearTranslator {
 
     static #config = {
         bitLength: 20,
-        separator: '1', // 分隔符改为'1'
+        separator: '1', // 分隔符为'1'
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
             ['10', '.'], ['11', '。']
@@ -28,14 +28,30 @@ class BearTranslator {
             this.#updateStatus('✅ 词库加载完成');
             this.#dictionary.loaded = true;
         } catch (e) {
-            this.#updateStatus('⚠️ 词库加载失败，仅使用编码转换');
+            // 显示详细错误信息（控制台+页面）
+            const errorMsg = `⚠️ 词库加载失败：${e.message}（仅使用编码转换）`;
+            this.#updateStatus(errorMsg);
+            console.error('词库加载失败详情：', e); // 控制台打印完整错误
             this.#resetDictionary();
         }
     }
 
     static async #loadDictionary() {
-        const response = await fetch('./dictionary.json');
-        const data = await response.json();
+        // 修正路径：根据实际目录结构调整（此处假设dictionary.json在根目录，js在子文件夹）
+        const response = await fetch('../dictionary.json');
+        
+        // 验证HTTP响应状态（404/500等错误会触发此处）
+        if (!response.ok) {
+            throw new Error(`文件请求失败（状态码：${response.status}），请检查文件路径是否正确`);
+        }
+
+        // 解析JSON（若格式错误会触发catch）
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            throw new Error(`JSON格式错误：${parseError.message}，请检查dictionary.json语法`);
+        }
         
         this.#resetDictionary();
         Object.entries(data.main).forEach(([key, value]) => {
@@ -81,7 +97,7 @@ class BearTranslator {
 
     static #detectLanguage(text) {
         const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-        const bearTokens = text.match(/[哒啊1.~。]/g)?.length || 0; // 包含新分隔符'1'
+        const bearTokens = text.match(/[哒啊1.~。]/g)?.length || 0; // 包含分隔符'1'
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
@@ -149,7 +165,6 @@ class BearTranslator {
     }
 
     static #decodeBear(text) {
-        // 修复分割逻辑：使用'1'作为分隔符，同时保留原词典词
         const result = [];
         let currentPos = 0;
         const textLen = text.length;
@@ -220,7 +235,12 @@ class BearTranslator {
     }
 
     static #updateStatus(msg) {
-        document.getElementById('status').textContent = msg;
+        const statusEl = document.getElementById('status');
+        if (statusEl) {
+            statusEl.textContent = msg;
+        } else {
+            console.log('状态提示：', msg); // 若未找到status元素，在控制台显示
+        }
     }
 }
 
