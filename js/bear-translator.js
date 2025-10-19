@@ -21,7 +21,12 @@ class BearTranslator {
             ['.', '10'], ['。', '11']
         ])
     };
-
+    static async #loadDictionary() {
+        // 尝试多个可能的路径
+        const possiblePaths = [
+            'https://raw.githubusercontent.com/Haoqi7/yi/main/js/dictionary.json'
+            './js/dictionary.json',
+        ];
     static async init() {
         try {
             // 尝试加载外部词典
@@ -37,11 +42,7 @@ class BearTranslator {
         }
     }
 
-    static async #loadDictionary() {
-        // 尝试多个可能的路径
-        const possiblePaths = [
-            './js/dictionary.json',
-        ];
+
         
         let response;
         for (const path of possiblePaths) {
@@ -332,4 +333,5 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
 
