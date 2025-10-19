@@ -42,9 +42,10 @@ class BearTranslator {
         const possiblePaths = [
             '../dictionary.json',
             './dictionary.json',
+            'dictionary.json',
             './js/dictionary.json',
             '../js/dictionary.json',
-            'https://raw.githubusercontent.com/your-username/your-repo/main/dictionary.json'
+            'https://raw.githubusercontent.com/Haoqi7/yi/blob/main/dictionary.json'
         ];
         
         let response;

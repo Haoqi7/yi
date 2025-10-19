@@ -51,7 +51,11 @@ class App {
     static #updateUI(result) {
         const resultDiv = document.getElementById('conversion-result');
         const tagsDiv = document.getElementById('code-tags');
-        
+            // 添加调试信息
+        const debugEl = document.getElementById('debug-info');
+        if (debugEl) {
+            debugEl.textContent = `字典状态: ${BearTranslator.dictionary.loaded ? '已加载' : '未加载'} | 使用字典: ${useDict}`;
+    }
         resultDiv.innerHTML = this.#sanitize(result.displayText);
         
         // 显示每个部分的转换类型（字典/编码）
