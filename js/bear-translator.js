@@ -122,7 +122,7 @@ class BearTranslator {
         }
         
         return {
-            displayText: result.map(r => r.text).join(' '),
+            displayText: result.map(r => r.text).join(''),  // 这里用了空格连接
             details: result
         };
     }
@@ -190,6 +190,7 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
 
 
 
