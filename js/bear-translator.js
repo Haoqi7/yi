@@ -11,7 +11,7 @@ class BearTranslator {
 
     static #config = {
         bitLength: 20,
-        separator: '1', // 分隔符改为“1”
+        separator: '1', // 分隔符为“1”
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
             ['10', '.'], ['11', '。']
@@ -73,7 +73,7 @@ class BearTranslator {
 
     static #detectLanguage(text) {
         const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-        const bearTokens = text.match(/[哒啊1.~]/g)?.length || 0; // 检测字符包含“1”
+        const bearTokens = text.match(/[哒啊1.~]/g)?.length || 0;
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
@@ -104,7 +104,7 @@ class BearTranslator {
                 if (dictMap.has(candidate)) {
                     result.push({
                         text: dictMap.get(candidate),
-                        type: 'dict'
+                        type: 'dict' // 字典匹配项
                     });
                     pos += checkLen;
                     matched = true;
@@ -114,15 +114,29 @@ class BearTranslator {
 
             if (!matched) {
                 result.push({
-                    text: this.#encodeBinary(text[pos]),
+                    text: this.#encodeBinary(text[pos]), // 非字典项（编码结果）
                     type: 'encode'
                 });
                 pos++;
             }
         }
         
+        // 核心修改：仅非字典项（encode）之间用分隔符分割
         return {
-            displayText: result.map(r => r.text).join(''), // 去掉空格，直接拼接
+            displayText: (() => {
+                const parts = [];
+                for (let i = 0; i < result.length; i++) {
+                    const current = result[i];
+                    const prev = i > 0 ? result[i - 1] : null;
+                    
+                    // 只有当前项和前一项都是非字典项（encode）时，才添加分隔符
+                    if (current.type === 'encode' && prev && prev.type === 'encode') {
+                        parts.push(this.#config.separator);
+                    }
+                    parts.push(current.text);
+                }
+                return parts.join('');
+            })(),
             details: result
         };
     }
@@ -137,11 +151,12 @@ class BearTranslator {
             const pair = binStr.substr(i, 2);
             encoded += this.#config.base4Map.get(pair) || '??';
         }
-        return encoded + this.#config.separator; // 拼接“1”作为分隔符
+        // 注意：此处移除了自动添加的分隔符，因为分隔符仅用于非字典项之间的分割
+        return encoded;
     }
 
     static #decodeBear(text) {
-        const tokens = text.split(/1+/); // 基于“1”分割token（支持连续多个“1”）
+        const tokens = text.split(/1+/); // 按分隔符“1”分割token
         const result = [];
 
         for (const token of tokens) {
