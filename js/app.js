@@ -18,10 +18,6 @@ class App {
             btn.addEventListener('click', () => 
                 this.#setMode(btn.dataset.mode));
         });
-
-        document.getElementById('useDictionary').addEventListener('change', () => {
-            this.#convertWithDebounce(0);
-        });
     }
 
     static #setMode(mode) {
@@ -37,8 +33,7 @@ class App {
         clearTimeout(this.#debounceTimer);
         this.#debounceTimer = setTimeout(() => {
             const input = document.getElementById('input').value;
-            const useDict = document.getElementById('useDictionary').checked;
-            const result = BearTranslator.convert(input, this.#currentMode, useDict);
+            const result = BearTranslator.convert(input, this.#currentMode);
             this.#updateUI(result);
         }, delay);
     }).bind(App);
