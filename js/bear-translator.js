@@ -38,7 +38,7 @@ class BearTranslator {
 
     static async #loadDictionary() {
         // 修正路径：根据实际目录结构调整（此处假设dictionary.json在根目录，js在子文件夹）
-        const response = await fetch('../dictionary.json');
+        const response = await fetch('./dictionary.json');
         
         // 验证HTTP响应状态（404/500等错误会触发此处）
         if (!response.ok) {
@@ -247,3 +247,4 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
