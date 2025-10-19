@@ -164,58 +164,70 @@ class BearTranslator {
         return encoded + this.#config.separator; // 添加'1'作为分隔符
     }
 
-    static #decodeBear(text) {
-        const result = [];
-        let currentPos = 0;
-        const textLen = text.length;
-
-        while (currentPos < textLen) {
-            let matched = false;
-            // 尝试匹配最长词典词（最大长度10）
-            for (let len = 10; len >= 1; len--) {
-                if (currentPos + len > textLen) continue;
-                const candidate = text.substr(currentPos, len);
-                if (this.#dictionary.bear.has(candidate)) {
-                    result.push({
-                        text: this.#dictionary.bear.get(candidate),
-                        type: 'dict'
-                    });
-                    currentPos += len;
-                    matched = true;
-                    break;
-                }
-            }
-
-            if (matched) continue;
-
-            // 尝试解码编码部分（10个字符+1个分隔符'1'）
-            if (currentPos + 11 <= textLen) {
-                const encodedPart = text.substr(currentPos, 10);
-                const separator = text.substr(currentPos + 10, 1);
-                if (separator === this.#config.separator) { // 检查是否为'1'
-                    const decodedChar = this.#decodeBinary(encodedPart);
-                    result.push({
-                        text: decodedChar,
-                        type: 'decode'
-                    });
-                    currentPos += 11;
-                    continue;
-                }
-            }
-
-            // 无法识别的字符直接保留
-            result.push({
-                text: text[currentPos],
-                type: 'unknown'
-            });
-            currentPos++;
+// 修改 BearTranslator 类的 #decodeBear 方法
+static #decodeBear(text) {
+    const result = [];
+    let remaining = text;
+    const separatorRegex = /[\s·]+/;
+    
+    while (remaining) {
+        // 先尝试匹配完整短语（包含分隔符）
+        let matched = false;
+        
+        // 提取所有可能的分隔符位置
+        const separators = [];
+        let match;
+        while ((match = separatorRegex.exec(remaining)) !== null) {
+            separators.push(match.index);
         }
         
-        return {
-            displayText: result.map(r => r.text).join(''),
-            details: result
-        };
+        // 从最长可能的短语开始尝试匹配
+        const possibleEnds = [...separators, remaining.length];
+        for (const end of possibleEnds.sort((a, b) => b - a)) {
+            const candidate = remaining.substring(0, end).trim();
+            if (candidate && this.#dictionary.bear.has(candidate)) {
+                result.push({
+                    text: this.#dictionary.bear.get(candidate),
+                    type: 'dict'
+                });
+                remaining = remaining.substring(end).replace(separatorRegex, '', 1);
+                matched = true;
+                break;
+            }
+        }
+        
+        if (matched) continue;
+        
+        // 如果没有匹配到完整短语，按分隔符拆分单个token处理
+        const firstSeparator = remaining.search(separatorRegex);
+        let token;
+        if (firstSeparator === -1) {
+            token = remaining;
+            remaining = '';
+        } else {
+            token = remaining.substring(0, firstSeparator);
+            remaining = remaining.substring(firstSeparator).replace(separatorRegex, '', 1);
+        }
+        
+        if (this.#dictionary.bear.has(token)) {
+            result.push({
+                text: this.#dictionary.bear.get(token),
+                type: 'dict'
+            });
+        } else {
+            const decoded = this.#decodeBinary(token);
+            result.push({
+                text: decoded !== token ? decoded : token,
+                type: decoded !== token ? 'decode' : 'unknown'
+            });
+        }
     }
+    
+    return {
+        displayText: result.map(r => r.text).join(''),
+        details: result
+    };
+}
 
     static #decodeBinary(token) {
         const clean = token.replace(/[^啊哒.~。]/g, '');
@@ -247,4 +259,5 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
 
