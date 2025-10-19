@@ -11,7 +11,7 @@ class BearTranslator {
 
     static #config = {
         bitLength: 20,
-        separator: '1', // 分隔符为'1'
+        separator: '·',
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
             ['10', '.'], ['11', '。']
@@ -28,43 +28,18 @@ class BearTranslator {
             this.#updateStatus('✅ 词库加载完成');
             this.#dictionary.loaded = true;
         } catch (e) {
-            // 显示详细错误信息（控制台+页面）
-            const errorMsg = `⚠️ 词库加载失败：${e.message}（仅使用编码转换）`;
-            this.#updateStatus(errorMsg);
-            console.error('词库加载失败详情：', e); // 控制台打印完整错误
+            this.#updateStatus('⚠️ 词库加载失败，仅使用编码转换');
             this.#resetDictionary();
         }
     }
 
     static async #loadDictionary() {
-        // 修正路径：根据实际目录结构调整（此处假设dictionary.json在根目录，js在子文件夹）
         const response = await fetch('./dictionary.json');
-        
-        // 验证HTTP响应状态（404/500等错误会触发此处）
-        if (!response.ok) {
-            throw new Error(`文件请求失败（状态码：${response.status}），请检查文件路径是否正确`);
-        }
-
-        // 解析JSON（若格式错误会触发catch）
-        let data;
-        try {
-            data = await response.json();
-        } catch (parseError) {
-            throw new Error(`JSON格式错误：${parseError.message}，请检查dictionary.json语法`);
-        }
+        const data = await response.json();
         
         this.#resetDictionary();
         Object.entries(data.main).forEach(([key, value]) => {
-            if (key === "了") return;
-
-            // 跳过重复条目（双向唯一）
-            if (this.#dictionary.cn.single.has(key) || 
-                (this.#dictionary.cn.phrases.get(key.length)?.has(key)) ||
-                this.#dictionary.bear.has(value)) {
-                console.warn(`跳过重复条目: 中文"${key}" 熊语"${value}"`);
-                return;
-            }
-
+            // 修复1: 允许"了"字被处理
             if (key.length === 1) {
                 this.#dictionary.cn.single.set(key, value);
             } else {
@@ -97,7 +72,7 @@ class BearTranslator {
 
     static #detectLanguage(text) {
         const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-        const bearTokens = text.match(/[哒啊1.~。]/g)?.length || 0; // 包含分隔符'1'
+        const bearTokens = text.match(/[哒啊·~.。\u2764\u231a\u2600\u263a\u{1f300}-\u{1f5ff}\u{1f600}-\u{1f64f}]/gu)?.length || 0;
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
@@ -107,18 +82,13 @@ class BearTranslator {
         const totalLen = text.length;
 
         while (pos < totalLen) {
-            const currentChar = text[pos];
-            if (currentChar === "了") {
-                pos++;
-                continue;
-            }
-
             let matched = false;
             const maxCheck = Math.min(
                 this.#dictionary.cn.maxLength,
                 totalLen - pos
             );
 
+            // 优先匹配最长短语
             for (let checkLen = maxCheck; checkLen >= 1; checkLen--) {
                 const candidate = text.substr(pos, checkLen);
                 const dictMap = checkLen === 1 ? 
@@ -137,8 +107,9 @@ class BearTranslator {
             }
 
             if (!matched) {
+                // 编码后添加分隔符，确保解码时能正确分割
                 result.push({
-                    text: this.#encodeBinary(text[pos]),
+                    text: this.#encodeBinary(text[pos]) + this.#config.separator,
                     type: 'encode'
                 });
                 pos++;
@@ -161,73 +132,78 @@ class BearTranslator {
             const pair = binStr.substr(i, 2);
             encoded += this.#config.base4Map.get(pair) || '??';
         }
-        return encoded + this.#config.separator; // 添加'1'作为分隔符
+        return encoded;
     }
 
-// 修改 BearTranslator 类的 #decodeBear 方法
-static #decodeBear(text) {
-    const result = [];
-    let remaining = text;
-    const separatorRegex = /[\s·]+/;
-    
-    while (remaining) {
-        // 先尝试匹配完整短语（包含分隔符）
-        let matched = false;
+    static #decodeBear(text) {
+        const result = [];
+        let remaining = text;
+        const separatorRegex = new RegExp(this.#config.separator + '|\\s+', 'g');
         
-        // 提取所有可能的分隔符位置
-        const separators = [];
-        let match;
-        while ((match = separatorRegex.exec(remaining)) !== null) {
-            separators.push(match.index);
-        }
-        
-        // 从最长可能的短语开始尝试匹配
-        const possibleEnds = [...separators, remaining.length];
-        for (const end of possibleEnds.sort((a, b) => b - a)) {
-            const candidate = remaining.substring(0, end).trim();
-            if (candidate && this.#dictionary.bear.has(candidate)) {
+        while (remaining) {
+            let matched = false;
+            
+            // 提取所有可能的分隔符位置
+            const separators = [];
+            let match;
+            // 重置正则表达式状态
+            separatorRegex.lastIndex = 0;
+            while ((match = separatorRegex.exec(remaining)) !== null) {
+                separators.push(match.index);
+            }
+            
+            // 从最长可能的短语开始尝试匹配
+            const possibleEnds = [...separators, remaining.length];
+            for (const end of possibleEnds.sort((a, b) => b - a)) {
+                const candidate = remaining.substring(0, end).trim();
+                if (candidate && this.#dictionary.bear.has(candidate)) {
+                    result.push({
+                        text: this.#dictionary.bear.get(candidate),
+                        type: 'dict'
+                    });
+                    // 跳过已匹配部分和分隔符
+                    remaining = remaining.substring(end);
+                    separatorRegex.lastIndex = 0;
+                    remaining = remaining.replace(separatorRegex, '', 1);
+                    matched = true;
+                    break;
+                }
+            }
+            
+            if (matched) continue;
+            
+            // 如果没有匹配到完整短语，按分隔符拆分单个token处理
+            const firstSeparator = remaining.search(separatorRegex);
+            let token;
+            if (firstSeparator === -1) {
+                token = remaining;
+                remaining = '';
+            } else {
+                token = remaining.substring(0, firstSeparator);
+                remaining = remaining.substring(firstSeparator);
+                separatorRegex.lastIndex = 0;
+                remaining = remaining.replace(separatorRegex, '', 1);
+            }
+            
+            if (this.#dictionary.bear.has(token)) {
                 result.push({
-                    text: this.#dictionary.bear.get(candidate),
+                    text: this.#dictionary.bear.get(token),
                     type: 'dict'
                 });
-                remaining = remaining.substring(end).replace(separatorRegex, '', 1);
-                matched = true;
-                break;
+            } else {
+                const decoded = this.#decodeBinary(token);
+                result.push({
+                    text: decoded !== token ? decoded : token,
+                    type: decoded !== token ? 'decode' : 'unknown'
+                });
             }
         }
         
-        if (matched) continue;
-        
-        // 如果没有匹配到完整短语，按分隔符拆分单个token处理
-        const firstSeparator = remaining.search(separatorRegex);
-        let token;
-        if (firstSeparator === -1) {
-            token = remaining;
-            remaining = '';
-        } else {
-            token = remaining.substring(0, firstSeparator);
-            remaining = remaining.substring(firstSeparator).replace(separatorRegex, '', 1);
-        }
-        
-        if (this.#dictionary.bear.has(token)) {
-            result.push({
-                text: this.#dictionary.bear.get(token),
-                type: 'dict'
-            });
-        } else {
-            const decoded = this.#decodeBinary(token);
-            result.push({
-                text: decoded !== token ? decoded : token,
-                type: decoded !== token ? 'decode' : 'unknown'
-            });
-        }
+        return {
+            displayText: result.map(r => r.text).join(''),
+            details: result
+        };
     }
-    
-    return {
-        displayText: result.map(r => r.text).join(''),
-        details: result
-    };
-}
 
     static #decodeBinary(token) {
         const clean = token.replace(/[^啊哒.~。]/g, '');
@@ -247,17 +223,10 @@ static #decodeBear(text) {
     }
 
     static #updateStatus(msg) {
-        const statusEl = document.getElementById('status');
-        if (statusEl) {
-            statusEl.textContent = msg;
-        } else {
-            console.log('状态提示：', msg); // 若未找到status元素，在控制台显示
-        }
+        document.getElementById('status').textContent = msg;
     }
 }
 
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
-
-
