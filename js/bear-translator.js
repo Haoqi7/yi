@@ -11,7 +11,7 @@ class BearTranslator {
 
     static #config = {
         bitLength: 20,
-        separator: '^',
+        separator: '1', // 分隔符改为'1'
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
             ['10', '.'], ['11', '。']
@@ -40,6 +40,14 @@ class BearTranslator {
         this.#resetDictionary();
         Object.entries(data.main).forEach(([key, value]) => {
             if (key === "了") return;
+
+            // 跳过重复条目（双向唯一）
+            if (this.#dictionary.cn.single.has(key) || 
+                (this.#dictionary.cn.phrases.get(key.length)?.has(key)) ||
+                this.#dictionary.bear.has(value)) {
+                console.warn(`跳过重复条目: 中文"${key}" 熊语"${value}"`);
+                return;
+            }
 
             if (key.length === 1) {
                 this.#dictionary.cn.single.set(key, value);
@@ -73,7 +81,7 @@ class BearTranslator {
 
     static #detectLanguage(text) {
         const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-        const bearTokens = text.match(/[哒啊·~.]/g)?.length || 0;
+        const bearTokens = text.match(/[哒啊1.~。]/g)?.length || 0; // 包含新分隔符'1'
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
@@ -113,10 +121,8 @@ class BearTranslator {
             }
 
             if (!matched) {
-                // 判断是否为最后一个需要编码的字符
-                const isLastChar = pos === totalLen - 1;
                 result.push({
-                    text: this.#encodeBinary(text[pos], isLastChar),
+                    text: this.#encodeBinary(text[pos]),
                     type: 'encode'
                 });
                 pos++;
@@ -129,7 +135,7 @@ class BearTranslator {
         };
     }
 
-    static #encodeBinary(char, isLast = false) {
+    static #encodeBinary(char) {
         const codePoint = char.codePointAt(0);
         const binStr = codePoint.toString(2)
             .padStart(this.#config.bitLength, '0');
@@ -139,27 +145,55 @@ class BearTranslator {
             const pair = binStr.substr(i, 2);
             encoded += this.#config.base4Map.get(pair) || '??';
         }
-        // 仅在非最后一个字符时添加分隔符
-        return encoded + (isLast ? '' : this.#config.separator);
+        return encoded + this.#config.separator; // 添加'1'作为分隔符
     }
 
     static #decodeBear(text) {
-        const tokens = text.split(/[\s·]+/);
+        // 修复分割逻辑：使用'1'作为分隔符，同时保留原词典词
         const result = [];
+        let currentPos = 0;
+        const textLen = text.length;
 
-        for (const token of tokens) {
-            if (this.#dictionary.bear.has(token)) {
-                result.push({
-                    text: this.#dictionary.bear.get(token),
-                    type: 'dict'
-                });
-            } else {
-                const decoded = this.#decodeBinary(token);
-                result.push({
-                    text: decoded !== token ? decoded : token,
-                    type: decoded !== token ? 'decode' : 'unknown'
-                });
+        while (currentPos < textLen) {
+            let matched = false;
+            // 尝试匹配最长词典词（最大长度10）
+            for (let len = 10; len >= 1; len--) {
+                if (currentPos + len > textLen) continue;
+                const candidate = text.substr(currentPos, len);
+                if (this.#dictionary.bear.has(candidate)) {
+                    result.push({
+                        text: this.#dictionary.bear.get(candidate),
+                        type: 'dict'
+                    });
+                    currentPos += len;
+                    matched = true;
+                    break;
+                }
             }
+
+            if (matched) continue;
+
+            // 尝试解码编码部分（10个字符+1个分隔符'1'）
+            if (currentPos + 11 <= textLen) {
+                const encodedPart = text.substr(currentPos, 10);
+                const separator = text.substr(currentPos + 10, 1);
+                if (separator === this.#config.separator) { // 检查是否为'1'
+                    const decodedChar = this.#decodeBinary(encodedPart);
+                    result.push({
+                        text: decodedChar,
+                        type: 'decode'
+                    });
+                    currentPos += 11;
+                    continue;
+                }
+            }
+
+            // 无法识别的字符直接保留
+            result.push({
+                text: text[currentPos],
+                type: 'unknown'
+            });
+            currentPos++;
         }
         
         return {
@@ -169,7 +203,7 @@ class BearTranslator {
     }
 
     static #decodeBinary(token) {
-        const clean = token.replace(/[^啊哒.~]/g, '');
+        const clean = token.replace(/[^啊哒.~。]/g, '');
         if(clean.length !== this.#config.bitLength/2) return token;
 
         let binStr = '';
