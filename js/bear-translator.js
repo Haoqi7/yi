@@ -28,13 +28,18 @@ class BearTranslator {
             this.#updateStatus('✅ 词库加载完成');
             this.#dictionary.loaded = true;
         } catch (e) {
+            console.error('词库加载错误:', e);
             this.#updateStatus('⚠️ 词库加载失败，仅使用编码转换');
             this.#resetDictionary();
         }
     }
 
     static async #loadDictionary() {
-        const response = await fetch('./dictionary.json');
+        // 修复路径：从js目录向上一级查找dictionary.json
+        const response = await fetch('../dictionary.json');
+        if (!response.ok) {
+            throw new Error(`加载失败: ${response.status} ${response.statusText}`);
+        }
         const data = await response.json();
         
         this.#resetDictionary();
@@ -62,13 +67,13 @@ class BearTranslator {
         this.#dictionary.cn.maxLength = 1;
     }
 
-    static convert(text, mode, useDictionary = true) {
+    static convert(text, mode) {
         const realMode = mode === 'auto' ? 
             this.#detectLanguage(text) : mode;
         
         return realMode === 'cn2bear' ? 
-            this.#encodeChinese(text, useDictionary) : 
-            this.#decodeBear(text, useDictionary);
+            this.#encodeChinese(text) : 
+            this.#decodeBear(text);
     }
 
     static #detectLanguage(text) {
@@ -77,7 +82,7 @@ class BearTranslator {
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
-    static #encodeChinese(text, useDictionary) {
+    static #encodeChinese(text) {
         const result = [];
         let pos = 0;
         const totalLen = text.length;
@@ -90,27 +95,25 @@ class BearTranslator {
             }
 
             let matched = false;
-            if (useDictionary) {
-                const maxCheck = Math.min(
-                    this.#dictionary.cn.maxLength,
-                    totalLen - pos
-                );
+            const maxCheck = Math.min(
+                this.#dictionary.cn.maxLength,
+                totalLen - pos
+            );
 
-                for (let checkLen = maxCheck; checkLen >= 1; checkLen--) {
-                    const candidate = text.substr(pos, checkLen);
-                    const dictMap = checkLen === 1 ? 
-                        this.#dictionary.cn.single : 
-                        (this.#dictionary.cn.phrases.get(checkLen) || new Map());
+            for (let checkLen = maxCheck; checkLen >= 1; checkLen--) {
+                const candidate = text.substr(pos, checkLen);
+                const dictMap = checkLen === 1 ? 
+                    this.#dictionary.cn.single : 
+                    (this.#dictionary.cn.phrases.get(checkLen) || new Map());
 
-                    if (dictMap.has(candidate)) {
-                        result.push({
-                            text: dictMap.get(candidate),
-                            type: 'dict'
-                        });
-                        pos += checkLen;
-                        matched = true;
-                        break;
-                    }
+                if (dictMap.has(candidate)) {
+                    result.push({
+                        text: dictMap.get(candidate),
+                        type: 'dict'
+                    });
+                    pos += checkLen;
+                    matched = true;
+                    break;
                 }
             }
 
@@ -142,12 +145,12 @@ class BearTranslator {
         return encoded + this.#config.separator;
     }
 
-    static #decodeBear(text, useDictionary) {
+    static #decodeBear(text) {
         const tokens = text.split(/[\s·]+/);
         const result = [];
 
         for (const token of tokens) {
-            if (useDictionary && this.#dictionary.bear.has(token)) {
+            if (this.#dictionary.bear.has(token)) {
                 result.push({
                     text: this.#dictionary.bear.get(token),
                     type: 'dict'
