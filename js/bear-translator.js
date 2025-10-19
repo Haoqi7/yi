@@ -11,7 +11,7 @@ class BearTranslator {
 
     static #config = {
         bitLength: 20,
-        separator: '·',
+        separator: '1', // 分隔符改为“1”
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
             ['10', '.'], ['11', '。']
@@ -73,7 +73,7 @@ class BearTranslator {
 
     static #detectLanguage(text) {
         const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-        const bearTokens = text.match(/[哒啊·~.]/g)?.length || 0;
+        const bearTokens = text.match(/[哒啊1.~]/g)?.length || 0; // 检测字符包含“1”
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
@@ -122,7 +122,7 @@ class BearTranslator {
         }
         
         return {
-            displayText: result.map(r => r.text).join(''),  // 这里用了空格连接
+            displayText: result.map(r => r.text).join(''), // 去掉空格，直接拼接
             details: result
         };
     }
@@ -137,14 +137,15 @@ class BearTranslator {
             const pair = binStr.substr(i, 2);
             encoded += this.#config.base4Map.get(pair) || '??';
         }
-        return encoded + this.#config.separator;
+        return encoded + this.#config.separator; // 拼接“1”作为分隔符
     }
 
     static #decodeBear(text) {
-        const tokens = text.split(/[\s·]+/);
+        const tokens = text.split(/1+/); // 基于“1”分割token（支持连续多个“1”）
         const result = [];
 
         for (const token of tokens) {
+            if (token.trim() === '') continue; // 过滤空token
             if (this.#dictionary.bear.has(token)) {
                 result.push({
                     text: this.#dictionary.bear.get(token),
@@ -190,7 +191,3 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
-
-
-
-
