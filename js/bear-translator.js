@@ -40,7 +40,7 @@ class BearTranslator {
     static async #loadDictionary() {
         // 尝试多个可能的路径
         const possiblePaths = [
-            '../js/dictionary.json'
+            './js/dictionary.json'
         ];
         
         let response;
@@ -332,6 +332,7 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
 
 
 
