@@ -71,6 +71,10 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             -webkit-tap-highlight-color: transparent;
             font-size: 0.9em;
         }
@@ -142,6 +146,16 @@
             flex: 1;
             padding-bottom: 10px;
         }
+        .dictionary-option {
+            margin: 0.8rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dictionary-option label {
+            font-size: 0.9em;
+            color: #666;
+        }
         @media (max-width: 420px) {
             .mode-switch {
                 grid-template-columns: 1fr;
@@ -191,6 +205,11 @@
             <button data-mode="cn2bear">中文 → 熊语</button>
             <button data-mode="bear2cn">熊语 → 中文</button>
         </div>
+        <!-- 恢复字典选择框 -->
+        <div class="dictionary-option">
+            <input type="checkbox" id="useDictionary" checked>
+            <label for="useDictionary">使用字典翻译（取消则仅用编码）</label>
+        </div>
         <div id="output">
             <button class="copy-btn" onclick="App.copyResult()">复制结果</button>
             <div id="conversion-result"></div>
@@ -200,28 +219,26 @@
     </div>
 
     <footer>
-    <h4><button id="commentBtn">- 评论 -</button></h4>
-    <div id="tcomment" style="display: none;"></div>
-    <script src="https://cdn.staticfile.org/twikoo/1.6.8/twikoo.all.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            twikoo.init({
-                envId: 'https://www.haoqiyun.tk/',
-                el: '#tcomment',
+        <h4><button id="commentBtn">- 评论 -</button></h4>
+        <div id="tcomment" style="display: none;"></div>
+        <script src="https://cdn.staticfile.org/twikoo/1.6.8/twikoo.all.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                twikoo.init({
+                    envId: 'https://www.haoqiyun.tk/',
+                    el: '#tcomment',
+                });
+                var commentBtn = document.getElementById('commentBtn');
+                commentBtn.addEventListener('click', () => {
+                    document.getElementById('tcomment').style.display = 
+                        document.getElementById('tcomment').style.display === 'none' ? 'block' : 'none';
+                });
             });
-
-            var commentBtn = document.getElementById('commentBtn');
-            function toggleComment() {
-                var comment = document.getElementById('tcomment');
-                comment.style.display = comment.style.display === 'none' ? 'block' : 'none';
-            }
-            commentBtn.addEventListener('click', toggleComment);
-        });
-    </script>
-    <p>© 2024 熊语研究协会 | 采用熊耳编码</p>
+        </script>
+        <p>© 2024 熊语研究协会 | 采用熊耳编码</p>
         <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-            <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span>次</span>
-</footer>
+        <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span>次</span>
+    </footer>
 
     <script src="./js/bear-translator.js"></script>
     <script src="./js/app.js"></script>
