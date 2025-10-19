@@ -121,22 +121,9 @@ class BearTranslator {
             }
         }
         
-        // 核心修改：仅非字典项（encode）之间用分隔符分割
+        // 核心修改：所有转换单元（dict和encode）之间用分隔符分割
         return {
-            displayText: (() => {
-                const parts = [];
-                for (let i = 0; i < result.length; i++) {
-                    const current = result[i];
-                    const prev = i > 0 ? result[i - 1] : null;
-                    
-                    // 只有当前项和前一项都是非字典项（encode）时，才添加分隔符
-                    if (current.type === 'encode' && prev && prev.type === 'encode') {
-                        parts.push(this.#config.separator);
-                    }
-                    parts.push(current.text);
-                }
-                return parts.join('');
-            })(),
+            displayText: result.map(r => r.text).join(this.#config.separator),
             details: result
         };
     }
@@ -151,12 +138,12 @@ class BearTranslator {
             const pair = binStr.substr(i, 2);
             encoded += this.#config.base4Map.get(pair) || '??';
         }
-        // 注意：此处移除了自动添加的分隔符，因为分隔符仅用于非字典项之间的分割
+        // 编码结果本身不包含分隔符，分隔符由外层join统一添加
         return encoded;
     }
 
     static #decodeBear(text) {
-        const tokens = text.split(/1+/); // 按分隔符“1”分割token
+        const tokens = text.split(new RegExp(`${this.#config.separator}+`)); // 按分隔符分割token（支持连续多个）
         const result = [];
 
         for (const token of tokens) {
