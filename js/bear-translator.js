@@ -24,8 +24,7 @@ class BearTranslator {
     static async #loadDictionary() {
         // 尝试多个可能的路径
         const possiblePaths = [
-            'https://raw.githubusercontent.com/Haoqi7/yi/blob/main/js/dictionary.json',
-            './js/dictionary.json'
+            '../js/dictionary.json'
         ];
     static async init() {
         try {
@@ -333,6 +332,7 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
 
 
 
