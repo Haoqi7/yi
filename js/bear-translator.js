@@ -11,7 +11,7 @@ class BearTranslator {
 
     static #config = {
         bitLength: 20,
-        separator: '·', // 编码分隔符
+        separator: '1', // 分隔符改为'1'
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
             ['10', '.'], ['11', '。']
@@ -41,20 +41,14 @@ class BearTranslator {
         Object.entries(data.main).forEach(([key, value]) => {
             if (key === "了") return;
 
-            // 跳过中文重复条目
+            // 跳过重复条目（双向唯一）
             if (this.#dictionary.cn.single.has(key) || 
-                (this.#dictionary.cn.phrases.get(key.length)?.has(key))) {
-                console.warn(`跳过重复中文条目: ${key}`);
+                (this.#dictionary.cn.phrases.get(key.length)?.has(key)) ||
+                this.#dictionary.bear.has(value)) {
+                console.warn(`跳过重复条目: 中文"${key}" 熊语"${value}"`);
                 return;
             }
 
-            // 跳过熊语重复条目（确保双向映射唯一）
-            if (this.#dictionary.bear.has(value)) {
-                console.warn(`跳过重复熊语条目: ${value}（已映射到${this.#dictionary.bear.get(value)}）`);
-                return;
-            }
-
-            // 添加中文到熊语映射
             if (key.length === 1) {
                 this.#dictionary.cn.single.set(key, value);
             } else {
@@ -65,8 +59,6 @@ class BearTranslator {
                 this.#dictionary.cn.phrases.get(len).set(key, value);
                 this.#dictionary.cn.maxLength = Math.max(this.#dictionary.cn.maxLength, len);
             }
-
-            // 添加熊语到中文映射
             this.#dictionary.bear.set(value, key);
         });
     }
@@ -89,7 +81,7 @@ class BearTranslator {
 
     static #detectLanguage(text) {
         const cnChars = text.match(/[\u4e00-\u9fa5]/g)?.length || 0;
-        const bearTokens = text.match(/[哒啊·.~。]/g)?.length || 0;
+        const bearTokens = text.match(/[哒啊1.~。]/g)?.length || 0; // 包含新分隔符'1'
         return cnChars > bearTokens ? 'cn2bear' : 'bear2cn';
     }
 
@@ -106,8 +98,11 @@ class BearTranslator {
             }
 
             let matched = false;
-            // 优先匹配长词组
-            const maxCheck = Math.min(this.#dictionary.cn.maxLength, totalLen - pos);
+            const maxCheck = Math.min(
+                this.#dictionary.cn.maxLength,
+                totalLen - pos
+            );
+
             for (let checkLen = maxCheck; checkLen >= 1; checkLen--) {
                 const candidate = text.substr(pos, checkLen);
                 const dictMap = checkLen === 1 ? 
@@ -125,7 +120,6 @@ class BearTranslator {
                 }
             }
 
-            // 未匹配到则编码
             if (!matched) {
                 result.push({
                     text: this.#encodeBinary(text[pos]),
@@ -141,31 +135,29 @@ class BearTranslator {
         };
     }
 
-    // 修复编码逻辑：确保特殊字符正确编码并添加分隔符
     static #encodeBinary(char) {
         const codePoint = char.codePointAt(0);
-        // 转换为20位二进制（不足补0）
-        const binStr = codePoint.toString(2).padStart(this.#config.bitLength, '0');
+        const binStr = codePoint.toString(2)
+            .padStart(this.#config.bitLength, '0');
         
         let encoded = '';
-        for (let i = 0; i < binStr.length; i += 2) {
+        for(let i=0; i<binStr.length; i+=2) {
             const pair = binStr.substr(i, 2);
             encoded += this.#config.base4Map.get(pair) || '??';
         }
-        // 添加分隔符用于解码分割
-        return encoded + this.#config.separator;
+        return encoded + this.#config.separator; // 添加'1'作为分隔符
     }
 
-    // 重写解码逻辑：支持混合词典词和编码的文本
     static #decodeBear(text) {
+        // 修复分割逻辑：使用'1'作为分隔符，同时保留原词典词
         const result = [];
         let currentPos = 0;
         const textLen = text.length;
 
         while (currentPos < textLen) {
             let matched = false;
-            // 尝试匹配最长可能的词典词
-            for (let len = 10; len >= 1; len--) { // 最大匹配长度10（可根据实际词典调整）
+            // 尝试匹配最长词典词（最大长度10）
+            for (let len = 10; len >= 1; len--) {
                 if (currentPos + len > textLen) continue;
                 const candidate = text.substr(currentPos, len);
                 if (this.#dictionary.bear.has(candidate)) {
@@ -181,24 +173,22 @@ class BearTranslator {
 
             if (matched) continue;
 
-            // 未匹配到则尝试解码编码部分（长度固定为10个字符+1个分隔符）
-            if (currentPos + 11 <= textLen) { // 10个编码字符 + 1个分隔符
+            // 尝试解码编码部分（10个字符+1个分隔符'1'）
+            if (currentPos + 11 <= textLen) {
                 const encodedPart = text.substr(currentPos, 10);
                 const separator = text.substr(currentPos + 10, 1);
-                if (separator === this.#config.separator) {
+                if (separator === this.#config.separator) { // 检查是否为'1'
                     const decodedChar = this.#decodeBinary(encodedPart);
-                    if (decodedChar !== encodedPart) { // 解码成功
-                        result.push({
-                            text: decodedChar,
-                            type: 'decode'
-                        });
-                        currentPos += 11; // 跳过编码部分+分隔符
-                        continue;
-                    }
+                    result.push({
+                        text: decodedChar,
+                        type: 'decode'
+                    });
+                    currentPos += 11;
+                    continue;
                 }
             }
 
-            // 都失败则直接取单个字符
+            // 无法识别的字符直接保留
             result.push({
                 text: text[currentPos],
                 type: 'unknown'
@@ -214,10 +204,10 @@ class BearTranslator {
 
     static #decodeBinary(token) {
         const clean = token.replace(/[^啊哒.~。]/g, '');
-        if (clean.length !== this.#config.bitLength / 2) return token;
+        if(clean.length !== this.#config.bitLength/2) return token;
 
         let binStr = '';
-        for (const c of clean) {
+        for(const c of clean) {
             binStr += this.#config.reverseBase4Map.get(c) || '00';
         }
 
