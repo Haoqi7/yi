@@ -14,11 +14,11 @@ class BearTranslator {
         separator: '·',
         base4Map: new Map([
             ['00', '啊'], ['01', '哒'],
-            ['10', '.'], ['11', '^']
+            ['10', '.'], ['11', ',']
         ]),
         reverseBase4Map: new Map([
             ['啊', '00'], ['哒', '01'],
-            ['.', '10'], ['^', '11']
+            ['.', '10'], [',', '11']
         ])
     };
 
@@ -190,4 +190,5 @@ class BearTranslator {
 if (typeof window !== 'undefined') {
     window.BearTranslator = BearTranslator;
 }
+
 
